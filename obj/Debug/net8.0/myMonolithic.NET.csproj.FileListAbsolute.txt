@@ -1,0 +1,8 @@
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.csproj.AssemblyReference.cache
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.AssemblyInfoInputs.cache
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.AssemblyInfo.cs
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.csproj.CoreCompileInputs.cache
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\satta\Documents\GitHub\myMonolithic.NET\obj\Debug\net8.0\myMonolithic.NET.sourcelink.json
