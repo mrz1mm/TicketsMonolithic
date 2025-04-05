@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{layout/default :: head(title='Manage User')}"></head>
+
+  <body>
+    <div th:replace="~{layout/default :: nav}"></div>
+
+    <div class="container mt-4">
+      <div th:replace="~{layout/default :: alerts}"></div>
+
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a th:href="@{/admin}">Admin</a></li>
+          <li class="breadcrumb-item">
+            <a th:href="@{/admin/users}">Users</a>
+          </li>
+          <li
+            class="breadcrumb-item active"
+            aria-current="page"
+            th:text="${user.username}"
+          >
+            username
+          </li>
+        </ol>
+      </nav>
+
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage User: <span th:text="${user.username}">username</span></h2>
+        <a th:href="@{/admin/users}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Back to Users
+        </a>
+      </div>
+
+      <div class="row">
+        <!-- User Information -->
+        <div class="col-lg-6">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">User Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-sm-4">
+                  <p class="mb-0 fw-bold">ID:</p>
+                </div>
+                <div class="col-sm-8">
+                  <p class="text-muted mb-0" th:text="${user.id}">1</p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-4">
+                  <p class="mb-0 fw-bold">Username:</p>
+                </div>
+                <div class="col-sm-8">
+                  <p class="text-muted mb-0" th:text="${user.username}">
+                    johndoe
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-4">
+                  <p class="mb-0 fw-bold">Email:</p>
+                </div>
+                <div class="col-sm-8">
+                  <p class="text-muted mb-0" th:text="${user.email}">
+                    john@example.com
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-4">
+                  <p class="mb-0 fw-bold">Full Name:</p>
+                </div>
+                <div class="col-sm-8">
+                  <p
+                    class="text-muted mb-0"
+                    th:text="${(user.firstName ?: '') + ' ' + (user.lastName ?: '')}"
+                  >
+                    John Doe
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-4">
+                  <p class="mb-0 fw-bold">Department:</p>
+                </div>
+                <div class="col-sm-8">
+                  <p
+                    class="text-muted mb-0"
+                    th:text="${user.department != null ? user.department.name : 'Not assigned'}"
+                  >
+                    IT Department
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-4">
+                  <p class="mb-0 fw-bold">Status:</p>
+                </div>
+                <div class="col-sm-8">
+                  <span th:if="${user.active}" class="badge bg-success"
+                    >Active</span
+                  >
+                  <span th:unless="${user.active}" class="badge bg-danger"
+                    >Inactive</span
+                  >
+                </div>
+              </div>
+              <hr />
+              <div class="row">
+                <div class="col-sm-4">
+                  <p class="mb-0 fw-bold">Created:</p>
+                </div>
+                <div class="col-sm-8">
+                  <p
+                    class="text-muted mb-0"
+                    th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm')}"
+                  >
+                    2023-01-01 12:00
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Roles -->
+        <div class="col-lg-6">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Role Management</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-4">
+                <h6>Current Roles:</h6>
+                <div>
+                  <span
+                    th:each="role : ${user.roles}"
+                    th:class="${'badge me-1 mb-2 ' + 
+                                            (role.name == 'ADMIN' ? 'bg-danger' : 
+                                            role.name == 'SUPPORT' ? 'bg-primary' : 
+                                            'bg-secondary')}"
+                    th:text="${role.name}"
+                    >ROLE</span
+                  >
+                </div>
+              </div>
+
+              <hr />
+
+              <h6>Manage Roles:</h6>
+              <div class="list-group">
+                <div
+                  th:each="role : ${allRoles}"
+                  class="list-group-item d-flex justify-content-between align-items-center"
+                >
+                  <span>
+                    <span
+                      th:class="${'badge me-2 ' + 
+                                            (role.name == 'ADMIN' ? 'bg-danger' : 
+                                            role.name == 'SUPPORT' ? 'bg-primary' : 
+                                            'bg-secondary')}"
+                      th:text="${role.name}"
+                      >ROLE</span
+                    >
+                    <small th:text="${role.description}"
+                      >Role description</small
+                    >
+                  </span>
+                  <div>
+                    <form
+                      th:action="@{/admin/users/{id}/role(id=${user.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <input
+                        type="hidden"
+                        name="roleId"
+                        th:value="${role.id}"
+                      />
+                      <input
+                        type="hidden"
+                        name="assign"
+                        th:value="${!user.roles.contains(role)}"
+                      />
+                      <button
+                        type="submit"
+                        th:class="${'btn btn-sm ' + (user.roles.contains(role) ? 'btn-danger' : 'btn-success')}"
+                      >
+                        <i
+                          th:class="${'fas ' + (user.roles.contains(role) ? 'fa-user-minus' : 'fa-user-plus')}"
+                        ></i>
+                        <span
+                          th:text="${user.roles.contains(role) ? 'Remove' : 'Assign'}"
+                        ></span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">User Actions</h5>
+            </div>
+            <div class="card-body">
+              <div class="d-grid gap-2">
+                <button class="btn btn-warning" disabled>
+                  <i class="fas fa-key"></i> Reset Password
+                </button>
+                <button th:if="${user.active}" class="btn btn-danger" disabled>
+                  <i class="fas fa-user-slash"></i> Deactivate Account
+                </button>
+                <button
+                  th:unless="${user.active}"
+                  class="btn btn-success"
+                  disabled
+                >
+                  <i class="fas fa-user-check"></i> Activate Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:replace="~{layout/default :: footer}"></div>
+  </body>
+</html>

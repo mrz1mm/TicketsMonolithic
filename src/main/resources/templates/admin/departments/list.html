@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head
+    th:replace="~{layout/default :: head(title='Department Management')}"
+  ></head>
+
+  <body>
+    <div th:replace="~{layout/default :: nav}"></div>
+
+    <div class="container mt-4">
+      <div th:replace="~{layout/default :: alerts}"></div>
+
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a th:href="@{/admin}">Admin</a></li>
+          <li class="breadcrumb-item active" aria-current="page">
+            Departments
+          </li>
+        </ol>
+      </nav>
+
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Department Management</h2>
+      </div>
+
+      <div class="row">
+        <!-- Departments List -->
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">Departments</h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>ID</th>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr th:each="department : ${departments}">
+                      <td th:text="${department.id}">1</td>
+                      <td th:text="${department.name}">IT Support</td>
+                      <td th:text="${department.description}">
+                        IT related issues
+                      </td>
+                      <td>
+                        <a
+                          th:href="@{/admin/departments/{id}/edit(id=${department.id})}"
+                          class="btn btn-sm btn-outline-primary"
+                        >
+                          <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger">
+                          <i class="fas fa-trash"></i> Delete
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Department Form -->
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">Add New Department</h5>
+            </div>
+            <div class="card-body">
+              <form
+                th:action="@{/admin/departments}"
+                method="post"
+                th:object="${newDepartment}"
+              >
+                <div class="mb-3">
+                  <label for="name" class="form-label">Name*</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="name"
+                    th:field="*{name}"
+                    required
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="description" class="form-label"
+                    >Description</label
+                  >
+                  <textarea
+                    class="form-control"
+                    id="description"
+                    rows="3"
+                    th:field="*{description}"
+                  ></textarea>
+                </div>
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-primary">
+                    Add Department
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:replace="~{layout/default :: footer}"></div>
+  </body>
+</html>

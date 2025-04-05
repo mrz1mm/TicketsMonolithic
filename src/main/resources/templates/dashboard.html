@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{layout/default :: head(title='Dashboard')}"></head>
+
+  <body>
+    <div th:replace="~{layout/default :: nav}"></div>
+
+    <div class="container mt-4">
+      <div th:replace="~{layout/default :: alerts}"></div>
+
+      <h2 class="mb-4">Dashboard</h2>
+
+      <div class="row">
+        <!-- Welcome Card -->
+        <div class="col-lg-12 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">
+                Welcome back,
+                <span th:text="${user.firstName ?: user.username}">User</span>!
+              </h5>
+              <p class="card-text" th:if="${user.department}">
+                Department:
+                <span th:text="${user.department.name}">Department</span>
+              </p>
+              <div class="mt-3">
+                <a th:href="@{/tickets/create}" class="btn btn-primary"
+                  >Create New Ticket</a
+                >
+                <a th:href="@{/tickets}" class="btn btn-outline-secondary ms-2"
+                  >View All Tickets</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Ticket Status Overview -->
+        <div class="col-lg-6 mb-4">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Ticket Status Overview</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div
+                  class="col-md-6 mb-3"
+                  th:each="statusCount : ${ticketStatusCounts}"
+                >
+                  <div
+                    th:class="${'card ' + (statusCount.key == T(com.ticketing.model.Ticket.TicketStatus).OPEN ? 'bg-danger text-white' : 
+                                               statusCount.key == T(com.ticketing.model.Ticket.TicketStatus).IN_PROGRESS ? 'bg-warning' : 
+                                               statusCount.key == T(com.ticketing.model.Ticket.TicketStatus).RESOLVED ? 'bg-success text-white' : 'bg-light')}"
+                  >
+                    <div class="card-body py-2">
+                      <h3 class="mb-0" th:text="${statusCount.value}">0</h3>
+                      <div th:text="${statusCount.key}">Status</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-6 mb-4">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Recent Tickets</h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                <a
+                  th:each="ticket : ${recentTickets}"
+                  th:href="@{/tickets/{id}(id=${ticket.id})}"
+                  class="list-group-item list-group-item-action"
+                >
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1" th:text="${ticket.title}">Ticket Title</h6>
+                    <span
+                      th:class="${'badge ' + 
+                                          (ticket.priority == T(com.ticketing.model.Ticket.TicketPriority).LOW ? 'bg-info' : 
+                                           ticket.priority == T(com.ticketing.model.Ticket.TicketPriority).MEDIUM ? 'bg-warning' :
+                                           ticket.priority == T(com.ticketing.model.Ticket.TicketPriority).HIGH ? 'bg-danger' : 
+                                           'bg-dark')}"
+                      th:text="${ticket.priority}"
+                    >
+                      Priority
+                    </span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <small
+                      th:text="'Created by: ' + ${ticket.createdBy.username}"
+                      >User</small
+                    >
+                    <small
+                      th:text="${#temporals.format(ticket.createdAt, 'yyyy-MM-dd HH:mm')}"
+                      >Date</small
+                    >
+                  </div>
+                  <small th:text="${'Status: ' + ticket.status}">Status</small>
+                </a>
+                <div
+                  th:if="${#lists.isEmpty(recentTickets)}"
+                  class="list-group-item"
+                >
+                  <p class="mb-0 text-center text-muted">
+                    No recent tickets found
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer text-center">
+              <a th:href="@{/tickets}" class="btn btn-sm btn-outline-primary"
+                >View All Tickets</a
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Cards for Admin & Support -->
+      <div class="row" sec:authorize="hasAnyRole('ADMIN', 'SUPPORT')">
+        <div class="col-lg-6 mb-4" sec:authorize="hasRole('ADMIN')">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Admin Tools</h5>
+            </div>
+            <div class="card-body">
+              <div class="list-group">
+                <a
+                  th:href="@{/admin/users}"
+                  class="list-group-item list-group-item-action"
+                >
+                  <i class="fas fa-users me-2"></i> Manage Users
+                </a>
+                <a
+                  th:href="@{/admin/departments}"
+                  class="list-group-item list-group-item-action"
+                >
+                  <i class="fas fa-building me-2"></i> Manage Departments
+                </a>
+                <a
+                  th:href="@{/admin/categories}"
+                  class="list-group-item list-group-item-action"
+                >
+                  <i class="fas fa-tags me-2"></i> Manage Categories
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="col-lg-6 mb-4"
+          sec:authorize="hasAnyRole('ADMIN', 'SUPPORT')"
+        >
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Support Dashboard</h5>
+            </div>
+            <div class="card-body">
+              <div class="card bg-info text-white mb-3">
+                <div class="card-body py-2">
+                  <h3 class="mb-0" th:text="${assignedTicketsCount ?: 0}">0</h3>
+                  <div>Tickets Assigned To You</div>
+                </div>
+              </div>
+              <div class="text-center">
+                <a th:href="@{/tickets}" class="btn btn-outline-primary"
+                  >View My Assigned Tickets</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:replace="~{layout/default :: footer}"></div>
+  </body>
+</html>

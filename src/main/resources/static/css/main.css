@@ -1,0 +1,115 @@
+/* Custom CSS for Ticket Management System */
+
+/* Body and container styles */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+.container {
+  flex: 1;
+}
+
+/* Card styling */
+.card {
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+  border: none;
+  border-radius: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 0;
+  background-color: #f8f9fc;
+  border-bottom: 1px solid #e3e6f0;
+}
+
+/* Admin dashboard card styling */
+.border-left-primary {
+  border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+  border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+  border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+  border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-danger {
+  border-left: 0.25rem solid #e74a3b !important;
+}
+
+/* Custom avatar styles */
+.avatar {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Custom form styles */
+.form-control:focus {
+  border-color: #bac8f3;
+  box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.btn-primary {
+  background-color: #4e73df;
+  border-color: #4e73df;
+}
+
+.btn-primary:hover {
+  background-color: #2e59d9;
+  border-color: #2653d4;
+}
+
+/* Ticket conversation styles */
+.bg-warning-subtle {
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+/* Navigation styling */
+.navbar-dark.bg-primary {
+  background-color: #4e73df !important;
+}
+
+.breadcrumb {
+  background-color: #f8f9fa;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.35rem;
+}
+
+/* Footer styling */
+footer {
+  margin-top: 2rem;
+  padding: 1rem 0;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e3e6f0;
+}
+
+/* Table styling */
+.table thead th {
+  vertical-align: middle;
+  border-bottom: 2px solid #e3e6f0;
+  font-weight: 700;
+  color: #5a5c69;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1rem;
+  }
+}

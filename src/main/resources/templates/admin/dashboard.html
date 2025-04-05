@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{layout/default :: head(title='Admin Dashboard')}"></head>
+
+  <body>
+    <div th:replace="~{layout/default :: nav}"></div>
+
+    <div class="container mt-4">
+      <div th:replace="~{layout/default :: alerts}"></div>
+
+      <h2 class="mb-4">Admin Dashboard</h2>
+
+      <!-- Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
+          <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+              <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                  <div
+                    class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+                  >
+                    Registered Users
+                  </div>
+                  <div
+                    class="h5 mb-0 font-weight-bold text-gray-800"
+                    th:text="${usersCount}"
+                  >
+                    0
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <i class="fas fa-users fa-2x text-gray-300"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+          <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+              <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                  <div
+                    class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                  >
+                    Departments
+                  </div>
+                  <div
+                    class="h5 mb-0 font-weight-bold text-gray-800"
+                    th:text="${departmentsCount}"
+                  >
+                    0
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <i class="fas fa-building fa-2x text-gray-300"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+          <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+              <div class="row no-gutters align-items-center">
+                <div class="col mr-2">
+                  <div
+                    class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                  >
+                    Categories
+                  </div>
+                  <div
+                    class="h5 mb-0 font-weight-bold text-gray-800"
+                    th:text="${categoriesCount}"
+                  >
+                    0
+                  </div>
+                </div>
+                <div class="col-auto">
+                  <i class="fas fa-tags fa-2x text-gray-300"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tools -->
+      <div class="row">
+        <div class="col-lg-6 mb-4">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">User Management</h6>
+            </div>
+            <div class="card-body">
+              <p>
+                Manage user accounts, assign roles, and review user activity.
+              </p>
+              <a
+                th:href="@{/admin/users}"
+                class="btn btn-primary btn-icon-split"
+              >
+                <span class="icon text-white-50">
+                  <i class="fas fa-user-cog"></i>
+                </span>
+                <span class="text">Manage Users</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">
+                Department Management
+              </h6>
+            </div>
+            <div class="card-body">
+              <p>Create and manage departments across your organization.</p>
+              <a
+                th:href="@{/admin/departments}"
+                class="btn btn-primary btn-icon-split"
+              >
+                <span class="icon text-white-50">
+                  <i class="fas fa-building"></i>
+                </span>
+                <span class="text">Manage Departments</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">
+                Category Management
+              </h6>
+            </div>
+            <div class="card-body">
+              <p>
+                Create and manage ticket categories for easier organization.
+              </p>
+              <a
+                th:href="@{/admin/categories}"
+                class="btn btn-primary btn-icon-split"
+              >
+                <span class="icon text-white-50">
+                  <i class="fas fa-tags"></i>
+                </span>
+                <span class="text">Manage Categories</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">System Reports</h6>
+            </div>
+            <div class="card-body">
+              <p>View system metrics, performance stats, and activity logs.</p>
+              <a href="#" class="btn btn-primary btn-icon-split">
+                <span class="icon text-white-50">
+                  <i class="fas fa-chart-bar"></i>
+                </span>
+                <span class="text">View Reports</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:replace="~{layout/default :: footer}"></div>
+  </body>
+</html>

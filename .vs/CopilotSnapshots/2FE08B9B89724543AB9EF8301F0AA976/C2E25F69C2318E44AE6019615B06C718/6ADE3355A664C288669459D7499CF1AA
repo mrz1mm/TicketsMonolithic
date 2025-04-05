@@ -1,0 +1,298 @@
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.Data.SqlClient;
+using System.Collections.Generic;
+
+namespace myMonolithic.NET.DAO
+{
+    /// <summary>
+    /// Classe per la gestione delle sessioni utente.
+    /// Utile per tracciare login, dispositivi e revoca token.
+    /// </summary>
+    public class DAOUserSession : BaseEntity
+    {
+        [Required]
+        public int UserId { get; set; }
+        
+        [Required]
+        public string Token { get; set; }
+        
+        [Required]
+        public DateTime ExpiryDate { get; set; }
+        
+        public string? IpAddress { get; set; }
+        
+        public string? UserAgent { get; set; }
+        
+        public string? DeviceInfo { get; set; }
+        
+        public DateTime? LastActivity { get; set; }
+        
+        public bool IsRevoked { get; set; } = false;
+        
+        // Reference to user
+        public DAOUsers? User { get; set; }
+        
+        #region CRUD Operations
+        
+        /// <summary>
+        /// Crea una nuova sessione per l'utente
+        /// </summary>
+        public static DAOUserSession CreateSession(int userId, string ipAddress = null, string userAgent = null, string deviceInfo = null, int expiryHours = 24)
+        {
+            DAOUserSession session = new DAOUserSession
+            {
+                UserId = userId,
+                Token = Guid.NewGuid().ToString(),
+                ExpiryDate = DateTime.Now.AddHours(expiryHours),
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                DeviceInfo = deviceInfo,
+                LastActivity = DateTime.Now,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                isActive = true,
+                IsRevoked = false
+            };
+            
+            session.Insert();
+            return session;
+        }
+        
+        /// <summary>
+        /// Verifica se una sessione è valida
+        /// </summary>
+        public static bool ValidateSession(string token)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"
+                    SELECT COUNT(1) FROM UserSessions 
+                    WHERE Token = @token 
+                    AND isActive = 1 
+                    AND IsRevoked = 0
+                    AND ExpiryDate > @now";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@token", token);
+                    cmd.Parameters.AddWithValue("@now", DateTime.Now);
+                    int count = Convert.ToInt32(cmd.ExecuteScalar());
+                    return count > 0;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Revoca una sessione utente
+        /// </summary>
+        public static bool RevokeSession(string token)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"
+                    UPDATE UserSessions SET 
+                        IsRevoked = 1,
+                        UpdatedAt = @updatedAt
+                    WHERE Token = @token";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@updatedAt", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@token", token);
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Revoca tutte le sessioni di un utente
+        /// </summary>
+        public static bool RevokeAllUserSessions(int userId)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"
+                    UPDATE UserSessions SET 
+                        IsRevoked = 1,
+                        UpdatedAt = @updatedAt
+                    WHERE UserId = @userId";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@updatedAt", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Aggiorna l'ultima attività di una sessione
+        /// </summary>
+        public static bool UpdateLastActivity(string token)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"
+                    UPDATE UserSessions SET 
+                        LastActivity = @lastActivity,
+                        UpdatedAt = @updatedAt
+                    WHERE Token = @token AND isActive = 1 AND IsRevoked = 0";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    DateTime now = DateTime.Now;
+                    cmd.Parameters.AddWithValue("@lastActivity", now);
+                    cmd.Parameters.AddWithValue("@updatedAt", now);
+                    cmd.Parameters.AddWithValue("@token", token);
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    return rowsAffected > 0;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Ottiene tutte le sessioni attive di un utente
+        /// </summary>
+        public static List<DAOUserSession> GetActiveSessionsByUserId(int userId)
+        {
+            List<DAOUserSession> sessions = new List<DAOUserSession>();
+            
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = @"
+                    SELECT * FROM UserSessions 
+                    WHERE UserId = @userId 
+                    AND isActive = 1 
+                    AND IsRevoked = 0
+                    AND ExpiryDate > @now";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@userId", userId);
+                    cmd.Parameters.AddWithValue("@now", DateTime.Now);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            sessions.Add(MapSessionFromReader(reader));
+                        }
+                    }
+                }
+            }
+            
+            return sessions;
+        }
+        
+        /// <summary>
+        /// Ottiene una sessione in base al token
+        /// </summary>
+        public static DAOUserSession? GetByToken(string token)
+        {
+            DAOUserSession? session = null;
+            
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                string sql = "SELECT * FROM UserSessions WHERE Token = @token";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@token", token);
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            session = MapSessionFromReader(reader);
+                        }
+                    }
+                }
+            }
+            
+            return session;
+        }
+        
+        /// <summary>
+        /// Inserisce la sessione nel database
+        /// </summary>
+        public bool Insert()
+        {
+            try
+            {
+                using (var conn = new SqlConnection(_connectionString))
+                {
+                    conn.Open();
+                    string sql = @"
+                        INSERT INTO UserSessions (
+                            UserId, Token, ExpiryDate, IpAddress, UserAgent, 
+                            DeviceInfo, LastActivity, IsRevoked, CreatedAt, UpdatedAt, isActive
+                        )
+                        VALUES (
+                            @userId, @token, @expiryDate, @ipAddress, @userAgent, 
+                            @deviceInfo, @lastActivity, @isRevoked, @createdAt, @updatedAt, @isActive
+                        );
+                        SELECT SCOPE_IDENTITY();";
+                    using (var cmd = new SqlCommand(sql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@userId", this.UserId);
+                        cmd.Parameters.AddWithValue("@token", this.Token);
+                        cmd.Parameters.AddWithValue("@expiryDate", this.ExpiryDate);
+                        cmd.Parameters.AddWithValue("@ipAddress", this.IpAddress ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@userAgent", this.UserAgent ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@deviceInfo", this.DeviceInfo ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@lastActivity", this.LastActivity ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@isRevoked", this.IsRevoked);
+                        cmd.Parameters.AddWithValue("@createdAt", this.CreatedAt);
+                        cmd.Parameters.AddWithValue("@updatedAt", this.UpdatedAt);
+                        cmd.Parameters.AddWithValue("@isActive", this.isActive);
+                        
+                        // Get the inserted ID
+                        this.PKID = Convert.ToInt32(cmd.ExecuteScalar());
+                        return this.PKID > 0;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+        
+        /// <summary>
+        /// Mappa un oggetto SqlDataReader a un oggetto DAOUserSession
+        /// </summary>
+        private static DAOUserSession MapSessionFromReader(SqlDataReader reader)
+        {
+            DAOUserSession session = new DAOUserSession
+            {
+                PKID = Convert.ToInt32(reader["PKID"]),
+                UserId = Convert.ToInt32(reader["UserId"]),
+                Token = reader["Token"].ToString(),
+                ExpiryDate = Convert.ToDateTime(reader["ExpiryDate"]),
+                IsRevoked = Convert.ToBoolean(reader["IsRevoked"]),
+                CreatedAt = Convert.ToDateTime(reader["CreatedAt"]),
+                UpdatedAt = Convert.ToDateTime(reader["UpdatedAt"]),
+                isActive = Convert.ToBoolean(reader["isActive"])
+            };
+
+            // Gestione per campi nullable
+            if (reader["IpAddress"] != DBNull.Value)
+                session.IpAddress = reader["IpAddress"].ToString();
+                
+            if (reader["UserAgent"] != DBNull.Value)
+                session.UserAgent = reader["UserAgent"].ToString();
+                
+            if (reader["DeviceInfo"] != DBNull.Value)
+                session.DeviceInfo = reader["DeviceInfo"].ToString();
+                
+            if (reader["LastActivity"] != DBNull.Value)
+                session.LastActivity = Convert.ToDateTime(reader["LastActivity"]);
+
+            return session;
+        }
+        
+        #endregion
+    }
+}

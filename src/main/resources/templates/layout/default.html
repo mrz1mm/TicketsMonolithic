@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="${title} ?: 'Ticket Management System'">
+      Ticket Management System
+    </title>
+
+    <!-- Alpine.js -->
+    <script
+      defer
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+
+    <!-- Custom CSS -->
+    <link th:href="@{/css/main.css}" rel="stylesheet" />
+
+    <!-- STOMP and SockJS for WebSockets -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stomp-websocket@2.3.4-next/lib/stomp.min.js"></script>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container">
+        <a class="navbar-brand" th:href="@{/}">Ticket System</a>
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item" sec:authorize="isAuthenticated()">
+              <a class="nav-link" th:href="@{/dashboard}">Dashboard</a>
+            </li>
+            <li class="nav-item" sec:authorize="isAuthenticated()">
+              <a class="nav-link" th:href="@{/tickets}">Tickets</a>
+            </li>
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+              <a class="nav-link" th:href="@{/admin}">Admin Panel</a>
+            </li>
+          </ul>
+
+          <ul class="navbar-nav">
+            <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="notificationDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i class="fas fa-bell"></i>
+                <span
+                  class="badge bg-danger"
+                  id="notification-badge"
+                  style="display: none"
+                  >0</span
+                >
+              </a>
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                id="notification-menu"
+                aria-labelledby="notificationDropdown"
+              >
+                <li>
+                  <span class="dropdown-item-text">No new notifications</span>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+              <a
+                class="nav-link dropdown-toggle"
+                href="#"
+                id="userDropdown"
+                role="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <span sec:authentication="name">User</span>
+              </a>
+              <ul
+                class="dropdown-menu dropdown-menu-end"
+                aria-labelledby="userDropdown"
+              >
+                <li>
+                  <a class="dropdown-item" th:href="@{/profile}">Profile</a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="dropdown-item">Logout</button>
+                  </form>
+                </li>
+              </ul>
+            </li>
+            <li class="nav-item" sec:authorize="!isAuthenticated()">
+              <a class="nav-link" th:href="@{/login}">Login</a>
+            </li>
+            <li class="nav-item" sec:authorize="!isAuthenticated()">
+              <a class="nav-link" th:href="@{/register}">Register</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+      <!-- Alert Messages -->
+      <div
+        th:if="${success}"
+        class="alert alert-success alert-dismissible fade show"
+      >
+        <span th:text="${success}">Success message</span>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
+      </div>
+
+      <div
+        th:if="${error}"
+        class="alert alert-danger alert-dismissible fade show"
+      >
+        <span th:text="${error}">Error message</span>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
+      </div>
+
+      <div
+        th:if="${warning}"
+        class="alert alert-warning alert-dismissible fade show"
+      >
+        <span th:text="${warning}">Warning message</span>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
+      </div>
+
+      <!-- Page Content -->
+      <div th:replace="${content}">
+        <!-- This is where page-specific content will be inserted -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center py-3 mt-5">
+      <div class="container">
+        <p class="mb-0">&copy; 2023 Ticket Management System</p>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- WebSocket Notification Script -->
+    <script th:inline="javascript" sec:authorize="isAuthenticated()">
+      document.addEventListener('DOMContentLoaded', function() {
+          // WebSocket connection setup
+          var socket = new SockJS('/ws');
+          var stompClient = Stomp.over(socket);
+          var username = [[${#authentication.name}]];
+
+          stompClient.connect({}, function(frame) {
+              // Subscribe to personal notifications
+              stompClient.subscribe('/user/queue/notifications', function(notification) {
+                  const data = JSON.parse(notification.body);
+                  handleNotification(data);
+              });
+
+              // For admins/support, subscribe to department channels
+              const roles = [[${#authentication.authorities}]];
+              if(roles.some(r => r.authority === 'ROLE_ADMIN')) {
+                  stompClient.subscribe('/topic/admin', function(notification) {
+                      const data = JSON.parse(notification.body);
+                      handleNotification(data);
+                  });
+              }
+
+              const departmentId = [[${#authentication.principal.departmentId}]];
+              if(departmentId && roles.some(r => r.authority === 'ROLE_SUPPORT' || r.authority === 'ROLE_ADMIN')) {
+                  stompClient.subscribe('/topic/department/' + departmentId, function(notification) {
+                      const data = JSON.parse(notification.body);
+                      handleNotification(data);
+                  });
+              }
+          });
+
+          // Store notifications in memory (in a real app, you might fetch from backend)
+          const notifications = [];
+
+          function handleNotification(data) {
+              // Add notification to array
+              notifications.unshift(data);
+
+              // Update badge
+              const badge = document.getElementById('notification-badge');
+              badge.textContent = notifications.length;
+              badge.style.display = 'inline';
+
+              // Update dropdown menu
+              updateNotificationMenu();
+
+              // Show toast if supported
+              showToast(data);
+          }
+
+          function updateNotificationMenu() {
+              const menu = document.getElementById('notification-menu');
+              menu.innerHTML = '';
+
+              if(notifications.length === 0) {
+                  const item = document.createElement('li');
+                  item.innerHTML = '<span class="dropdown-item-text">No new notifications</span>';
+                  menu.appendChild(item);
+                  return;
+              }
+
+              // Add notifications to menu
+              for(let i = 0; i < Math.min(notifications.length, 5); i++) {
+                  const notification = notifications[i];
+                  const item = document.createElement('li');
+
+                  let html = '';
+                  switch(notification.type) {
+                      case 'NEW_TICKET':
+                          html = `<a class="dropdown-item" href="/tickets/${notification.ticketId}">
+                                  <strong>New Ticket:</strong> ${notification.title}
+                                 </a>`;
+                          break;
+                      case 'NEW_REPLY':
+                          html = `<a class="dropdown-item" href="/tickets/${notification.ticketId}">
+                                  <strong>New Reply:</strong> ${notification.username} replied
+                                 </a>`;
+                          break;
+                      case 'TICKET_ASSIGNED':
+                          html = `<a class="dropdown-item" href="/tickets/${notification.ticketId}">
+                                  <strong>Assigned:</strong> Ticket #${notification.ticketId}
+                                 </a>`;
+                          break;
+                      case 'STATUS_CHANGED':
+                          html = `<a class="dropdown-item" href="/tickets/${notification.ticketId}">
+                                  <strong>Status Changed:</strong> Ticket #${notification.ticketId} is now ${notification.status}
+                                 </a>`;
+                          break;
+                  }
+
+                  item.innerHTML = html;
+                  menu.appendChild(item);
+              }
+
+              // Add "View All" link if there are more than 5
+              if(notifications.length > 5) {
+                  const viewAll = document.createElement('li');
+                  viewAll.innerHTML = '<div class="dropdown-divider"></div><a class="dropdown-item text-center" href="/notifications">View all</a>';
+                  menu.appendChild(viewAll);
+              }
+          }
+
+          function showToast(data) {
+              // Use browser notifications if available and permitted
+              if ("Notification" in window && Notification.permission === "granted") {
+                  let title = "New Notification";
+                  let options = {
+                      body: "",
+                      icon: "/img/notification-icon.png"
+                  };
+
+                  switch(data.type) {
+                      case 'NEW_TICKET':
+                          title = "New Ticket";
+                          options.body = `${data.title} created by ${data.createdBy}`;
+                          break;
+                      case 'NEW_REPLY':
+                          title = "New Reply";
+                          options.body = `${data.username} replied to ticket #${data.ticketId}`;
+                          break;
+                      case 'TICKET_ASSIGNED':
+                          title = "Ticket Assigned";
+                          options.body = `Ticket #${data.ticketId} assigned to you`;
+                          break;
+                      case 'STATUS_CHANGED':
+                          title = "Status Changed";
+                          options.body = `Ticket #${data.ticketId} status: ${data.status}`;
+                          break;
+                  }
+
+                  new Notification(title, options);
+              }
+          }
+
+          // Request notification permission if supported
+          if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+              Notification.requestPermission();
+          }
+
+          // Clear notifications when dropdown is clicked
+          document.getElementById('notificationDropdown').addEventListener('click', function() {
+              const badge = document.getElementById('notification-badge');
+              badge.style.display = 'none';
+          });
+      });
+    </script>
+  </body>
+</html>

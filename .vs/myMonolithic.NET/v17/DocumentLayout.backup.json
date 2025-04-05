@@ -1,12 +1,88 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|c:\\users\\satta\\documents\\github\\ticketsmonolithic\\dao\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|solutionrelative:dao\\baseentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|c:\\users\\satta\\documents\\github\\ticketsmonolithic\\dao\\daousersession.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|solutionrelative:dao\\daousersession.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|c:\\users\\satta\\documents\\github\\ticketsmonolithic\\dao\\daousers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|solutionrelative:dao\\daousers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|c:\\users\\satta\\documents\\github\\ticketsmonolithic\\dao\\daouserprofiles.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{44ECE256-A7A8-44B3-9DCF-EAAD5059F9A0}|ticketsMonolithic.NET.csproj|solutionrelative:dao\\daouserprofiles.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DAOUserSession.cs",
+              "DocumentMoniker": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\DAOUserSession.cs",
+              "RelativeDocumentMoniker": "DAO\\DAOUserSession.cs",
+              "ToolTip": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\DAOUserSession.cs*",
+              "RelativeToolTip": "DAO\\DAOUserSession.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACMAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-03T18:01:39.939Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "DAOUserProfiles.cs",
+              "DocumentMoniker": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\DAOUserProfiles.cs",
+              "RelativeDocumentMoniker": "DAO\\DAOUserProfiles.cs",
+              "ToolTip": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\DAOUserProfiles.cs*",
+              "RelativeToolTip": "DAO\\DAOUserProfiles.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-03T18:01:39.234Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DAOUsers.cs",
+              "DocumentMoniker": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\DAOUsers.cs",
+              "RelativeDocumentMoniker": "DAO\\DAOUsers.cs",
+              "ToolTip": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\DAOUsers.cs*",
+              "RelativeToolTip": "DAO\\DAOUsers.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADECAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-03T15:21:58.189Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BaseEntity.cs",
+              "DocumentMoniker": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\BaseEntity.cs",
+              "RelativeDocumentMoniker": "DAO\\BaseEntity.cs",
+              "ToolTip": "C:\\Users\\satta\\Documents\\GitHub\\ticketsMonolithic\\DAO\\BaseEntity.cs*",
+              "RelativeToolTip": "DAO\\BaseEntity.cs*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-03T10:49:08.196Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

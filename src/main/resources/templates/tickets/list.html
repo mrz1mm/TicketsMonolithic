@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{layout/default :: head(title='Tickets')}"></head>
+
+  <body>
+    <div th:replace="~{layout/default :: nav}"></div>
+
+    <div class="container mt-4">
+      <div th:replace="~{layout/default :: alerts}"></div>
+
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tickets</h2>
+        <a th:href="@{/tickets/create}" class="btn btn-primary">
+          <i class="fas fa-plus"></i> New Ticket
+        </a>
+      </div>
+
+      <!-- Filters -->
+      <div class="card mb-4">
+        <div class="card-header bg-light">
+          <h5
+            class="mb-0"
+            x-data="{show: false}"
+            @click="show = !show"
+            style="cursor: pointer"
+          >
+            <i class="fas fa-filter me-1"></i> Filters
+            <i
+              class="fas"
+              :class="show ? 'fa-chevron-up' : 'fa-chevron-down'"
+              style="float: right"
+            ></i>
+          </h5>
+        </div>
+        <div class="card-body" x-data="{show: false}" x-show="show">
+          <form th:action="@{/tickets}" method="get">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                  <option value="">All Statuses</option>
+                  <option
+                    th:each="status : ${statuses}"
+                    th:value="${status}"
+                    th:text="${status}"
+                  >
+                    Status
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="priority" class="form-label">Priority</label>
+                <select class="form-select" id="priority" name="priority">
+                  <option value="">All Priorities</option>
+                  <option
+                    th:each="priority : ${T(com.ticketing.model.Ticket.TicketPriority).values()}"
+                    th:value="${priority}"
+                    th:text="${priority}"
+                  >
+                    Priority
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label for="department" class="form-label">Department</label>
+                <select class="form-select" id="department" name="departmentId">
+                  <option value="">All Departments</option>
+                  <option
+                    th:each="dept : ${@departmentService.getAllDepartments()}"
+                    th:value="${dept.id}"
+                    th:text="${dept.name}"
+                  >
+                    Department
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">
+                Apply Filters
+              </button>
+              <a th:href="@{/tickets}" class="btn btn-outline-secondary ms-2"
+                >Clear</a
+              >
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tickets Table -->
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Department</th>
+                  <th>Created</th>
+                  <th>Assigned To</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="ticket : ${tickets}">
+                  <td th:text="${ticket.id}">123</td>
+                  <td>
+                    <a
+                      th:href="@{/tickets/{id}(id=${ticket.id})}"
+                      th:text="${ticket.title}"
+                      class="text-decoration-none"
+                    >
+                      Ticket title
+                    </a>
+                  </td>
+                  <td>
+                    <span
+                      th:class="${'badge ' + 
+                                                (ticket.status == T(com.ticketing.model.Ticket.TicketStatus).OPEN ? 'bg-danger' : 
+                                                ticket.status == T(com.ticketing.model.Ticket.TicketStatus).ASSIGNED ? 'bg-info' :
+                                                ticket.status == T(com.ticketing.model.Ticket.TicketStatus).IN_PROGRESS ? 'bg-warning' :
+                                                ticket.status == T(com.ticketing.model.Ticket.TicketStatus).RESOLVED ? 'bg-success' : 
+                                                'bg-secondary')}"
+                      th:text="${ticket.status}"
+                    >
+                      Status
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      th:class="${'badge ' + 
+                                                (ticket.priority == T(com.ticketing.model.Ticket.TicketPriority).LOW ? 'bg-info' : 
+                                                ticket.priority == T(com.ticketing.model.Ticket.TicketPriority).MEDIUM ? 'bg-warning' :
+                                                ticket.priority == T(com.ticketing.model.Ticket.TicketPriority).HIGH ? 'bg-danger' : 
+                                                'bg-dark')}"
+                      th:text="${ticket.priority}"
+                    >
+                      Priority
+                    </span>
+                  </td>
+                  <td
+                    th:text="${ticket.department != null ? ticket.department.name : 'N/A'}"
+                  >
+                    Department
+                  </td>
+                  <td
+                    th:text="${#temporals.format(ticket.createdAt, 'yyyy-MM-dd')}"
+                  >
+                    2023-12-01
+                  </td>
+                  <td
+                    th:text="${ticket.assignedTo != null ? ticket.assignedTo.username : 'Unassigned'}"
+                  >
+                    Agent
+                  </td>
+                  <td>
+                    <a
+                      th:href="@{/tickets/{id}(id=${ticket.id})}"
+                      class="btn btn-sm btn-outline-primary"
+                    >
+                      View
+                    </a>
+                  </td>
+                </tr>
+                <tr th:if="${tickets.empty}">
+                  <td colspan="8" class="text-center py-4">
+                    <div class="alert alert-info mb-0">No tickets found</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="card-footer" th:if="${totalPages > 0}">
+          <nav>
+            <ul class="pagination justify-content-center mb-0">
+              <li
+                th:class="${'page-item ' + (currentPage == 0 ? 'disabled' : '')}"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/tickets(page=${0})}"
+                  aria-label="First"
+                >
+                  <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+              </li>
+              <li
+                th:class="${'page-item ' + (currentPage == 0 ? 'disabled' : '')}"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/tickets(page=${currentPage - 1})}"
+                  aria-label="Previous"
+                >
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+              <li
+                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                th:if="${i >= currentPage - 2 && i <= currentPage + 2}"
+                th:class="${'page-item ' + (currentPage == i ? 'active' : '')}"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/tickets(page=${i})}"
+                  th:text="${i + 1}"
+                  >1</a
+                >
+              </li>
+              <li
+                th:class="${'page-item ' + (currentPage + 1 >= totalPages ? 'disabled' : '')}"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/tickets(page=${currentPage + 1})}"
+                  aria-label="Next"
+                >
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+              <li
+                th:class="${'page-item ' + (currentPage + 1 >= totalPages ? 'disabled' : '')}"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/tickets(page=${totalPages - 1})}"
+                  aria-label="Last"
+                >
+                  <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <div th:replace="~{layout/default :: footer}"></div>
+  </body>
+</html>

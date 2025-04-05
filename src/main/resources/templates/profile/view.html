@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <head th:replace="~{layout/default :: head(title='My Profile')}"></head>
+
+  <body>
+    <div th:replace="~{layout/default :: nav}"></div>
+
+    <div class="container mt-4">
+      <div th:replace="~{layout/default :: alerts}"></div>
+
+      <h2 class="mb-4">My Profile</h2>
+
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Profile Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-sm-3">
+                  <p class="mb-0">Username</p>
+                </div>
+                <div class="col-sm-9">
+                  <p class="text-muted mb-0" th:text="${user.username}">
+                    johndoe
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-3">
+                  <p class="mb-0">Full Name</p>
+                </div>
+                <div class="col-sm-9">
+                  <p
+                    class="text-muted mb-0"
+                    th:text="${(user.firstName ?: '') + ' ' + (user.lastName ?: '')}"
+                  >
+                    John Doe
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-3">
+                  <p class="mb-0">Email</p>
+                </div>
+                <div class="col-sm-9">
+                  <p class="text-muted mb-0" th:text="${user.email}">
+                    example@example.com
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row mb-3">
+                <div class="col-sm-3">
+                  <p class="mb-0">Department</p>
+                </div>
+                <div class="col-sm-9">
+                  <p
+                    class="text-muted mb-0"
+                    th:text="${user.department != null ? user.department.name : 'Not assigned'}"
+                  >
+                    IT Department
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <div class="row">
+                <div class="col-sm-3">
+                  <p class="mb-0">Roles</p>
+                </div>
+                <div class="col-sm-9">
+                  <div>
+                    <span
+                      th:each="role : ${user.roles}"
+                      class="badge bg-primary me-1"
+                      th:text="${role.name}"
+                      >ROLE</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Account Stats</h5>
+            </div>
+            <div class="card-body">
+              <p>
+                <strong>Member Since:</strong>
+                <span
+                  th:text="${#temporals.format(user.createdAt, 'MMMM dd, yyyy')}"
+                  >January 1, 2023</span
+                >
+              </p>
+              <a th:href="@{/tickets}" class="btn btn-primary btn-sm mt-2"
+                >My Tickets</a
+              >
+            </div>
+          </div>
+
+          <!-- Account Settings -->
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="card-title mb-0">Account Settings</h5>
+            </div>
+            <div class="card-body">
+              <div class="d-grid gap-2">
+                <a href="#" class="btn btn-outline-primary">Change Password</a>
+                <a href="#" class="btn btn-outline-secondary">Edit Profile</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div th:replace="~{layout/default :: footer}"></div>
+  </body>
+</html>
