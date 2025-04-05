@@ -35,10 +35,11 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
         
-        Collection<SimpleGrantedAuthority> authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()))
-                .collect(Collectors.toList());
-
+        Collection<SimpleGrantedAuthority> authorities = new HashSet<>();
+        user.getRoles().forEach(role -> {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()));
+        });
+        
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),

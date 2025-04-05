@@ -30,31 +30,36 @@ public class DashboardController {
     }
     
     @GetMapping("/dashboard")
-    public String dashboard(Model model, Principal principal) {
-        User currentUser = userService.getUserByUsername(principal.getName());
-        
-        // Get recent tickets
-        List<Ticket> recentTickets = ticketService.findTop10ByOrderByCreatedAtDesc();
-        
-        // Count tickets by status
-        Map<Ticket.TicketStatus, Long> ticketStatusCounts = new HashMap<>();
-        for (Ticket.TicketStatus status : Ticket.TicketStatus.values()) {
-            ticketStatusCounts.put(status, ticketService.countByStatus(status));
+    public String dashboard(Model model) {
+        try {
+            // Ottieni l'autenticazione corrente
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication != null && authentication.isAuthenticated()) {
+                // Ottieni il nome utente
+                String username = authentication.getName();
+                
+                // Ottieni i dati completi dell'utente
+                User currentUser = userService.getUserByUsername(username);
+                
+                // Aggiungi i dati dell'utente al modello
+                model.addAttribute("user", currentUser);
+                model.addAttribute("fullName", currentUser.getFirstName() + " " + currentUser.getLastName());
+                model.addAttribute("roles", currentUser.getRoles());
+                model.addAttribute("department", currentUser.getDepartment());
+                
+                // Debug: aggiungi tutti i dati dell'autenticazione
+                model.addAttribute("authentication", authentication);
+                
+                return "dashboard";
+            } else {
+                // Se l'utente non è autenticato, reindirizza al login
+                return "redirect:/login?error=notauthenticated";
+            }
+        } catch (Exception e) {
+            // Log dell'errore
+            e.printStackTrace();
+            return "redirect:/login?error=dashboarderror&message=" + e.getMessage();
         }
-        
-        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().equals("ADMIN"));
-        boolean isSupport = currentUser.getRoles().stream().anyMatch(r -> r.getName().equals("SUPPORT"));
-        
-        model.addAttribute("user", currentUser);
-        model.addAttribute("recentTickets", recentTickets);
-        model.addAttribute("ticketStatusCounts", ticketStatusCounts);
-        
-        // Add assigned tickets count if user is support staff
-        if (isSupport || isAdmin) {
-            Long assignedTicketsCount = ticketService.countByAssignedTo(currentUser);
-            model.addAttribute("assignedTicketsCount", assignedTicketsCount);
-        }
-        
-        return "dashboard";
     }
 }

@@ -49,12 +49,13 @@ public class SecurityConfig {
                     .requestMatchers("/css/**", "/js/**", "/img/**", "/webjars/**", "/error").permitAll()
                     .requestMatchers("/register", "/login").permitAll()
                     .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/dashboard").hasAnyRole("USER", "ADMIN", "SUPPORT")
                     .anyRequest().authenticated()
             )
             .formLogin(form -> 
                 form
                     .loginPage("/login")
-                    .defaultSuccessUrl("/dashboard")
+                    .defaultSuccessUrl("/dashboard", true)
                     .permitAll()
             )
             .logout(logout -> 
