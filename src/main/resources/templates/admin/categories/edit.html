@@ -3,90 +3,96 @@
   lang="en"
   xmlns:th="http://www.thymeleaf.org"
   xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+  class="h-100"
 >
   <head th:replace="~{layout/default :: head(title='Edit Category')}"></head>
 
-  <body>
+  <body class="d-flex flex-column h-100">
     <div th:replace="~{layout/default :: nav}"></div>
 
-    <div class="container mt-4">
-      <div th:replace="~{layout/default :: alerts}"></div>
+    <main class="flex-shrink-0">
+      <div class="container mt-4">
+        <div th:replace="~{layout/default :: alerts}"></div>
 
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a th:href="@{/admin}">Admin</a></li>
-          <li class="breadcrumb-item">
-            <a th:href="@{/admin/categories}">Categories</a>
-          </li>
-          <li class="breadcrumb-item active" aria-current="page">Edit</li>
-        </ol>
-      </nav>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/admin}">Admin</a></li>
+            <li class="breadcrumb-item">
+              <a th:href="@{/admin/categories}">Categories</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Edit</li>
+          </ol>
+        </nav>
 
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Edit Category</h2>
-        <a th:href="@{/admin/categories}" class="btn btn-secondary">
-          <i class="fas fa-arrow-left"></i> Back to Categories
-        </a>
-      </div>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>Edit Category</h2>
+          <a th:href="@{/admin/categories}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Categories
+          </a>
+        </div>
 
-      <div class="row">
-        <div class="col-lg-8 mx-auto">
-          <div class="card">
-            <div class="card-header bg-light">
-              <h5 class="mb-0">Edit Category Details</h5>
-            </div>
-            <div class="card-body">
-              <form
-                th:action="@{/admin/categories/{id}(id=${category.id})}"
-                method="post"
-                th:object="${category}"
-              >
-                <div class="mb-3">
-                  <label for="id" class="form-label">ID</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="id"
-                    th:value="${category.id}"
-                    disabled
-                  />
-                </div>
-                <div class="mb-3">
-                  <label for="name" class="form-label">Name*</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="name"
-                    th:field="*{name}"
-                    required
-                  />
-                </div>
-                <div class="mb-3">
-                  <label for="description" class="form-label"
-                    >Description</label
-                  >
-                  <textarea
-                    class="form-control"
-                    id="description"
-                    rows="3"
-                    th:field="*{description}"
-                  ></textarea>
-                </div>
-                <div class="d-flex justify-content-between">
-                  <a th:href="@{/admin/categories}" class="btn btn-secondary"
-                    >Cancel</a
-                  >
-                  <button type="submit" class="btn btn-primary">
-                    Update Category
-                  </button>
-                </div>
-              </form>
+        <div class="row">
+          <div class="col-lg-8 mx-auto">
+            <div class="card mb-5">
+              <div class="card-header bg-light">
+                <h5 class="mb-0">Edit Category Details</h5>
+              </div>
+              <div class="card-body">
+                <form
+                  th:action="@{/admin/categories/{id}(id=${category.id})}"
+                  method="post"
+                  th:object="${category}"
+                >
+                  <div class="mb-3">
+                    <label for="id" class="form-label">ID</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="id"
+                      th:value="${category.id}"
+                      disabled
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="name" class="form-label">Name*</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="name"
+                      th:field="*{name}"
+                      required
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="description" class="form-label"
+                      >Description</label
+                    >
+                    <textarea
+                      class="form-control"
+                      id="description"
+                      rows="3"
+                      th:field="*{description}"
+                    ></textarea>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <a th:href="@{/admin/categories}" class="btn btn-secondary"
+                      >Cancel</a
+                    >
+                    <button type="submit" class="btn btn-primary">
+                      Update Category
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
 
-    <div th:replace="~{layout/default :: footer}"></div>
+    <footer
+      class="footer mt-auto py-3"
+      th:replace="~{layout/default :: footer}"
+    ></footer>
   </body>
 </html>
