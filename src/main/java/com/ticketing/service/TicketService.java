@@ -1,269 +1,236 @@
 package com.ticketing.service;
 
 import com.ticketing.dto.TicketDto;
-import com.ticketing.dto.TicketReplyDto;
-import com.ticketing.model.*;
-import com.ticketing.repository.*;
-import jakarta.transaction.Transactional;
+import com.ticketing.exception.ResourceNotFoundException;
+import com.ticketing.model.Ticket;
+import com.ticketing.model.User;
+import com.ticketing.repository.TicketRepository;
+import com.ticketing.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Servizio per la gestione dei ticket.
+ * Fornisce metodi per creare, recuperare, aggiornare ed eliminare ticket,
+ * nonché per gestire lo stato e le assegnazioni dei ticket.
+ */
 @Service
 @RequiredArgsConstructor
 public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
-    private final DepartmentRepository departmentRepository;
-    private final CategoryRepository categoryRepository;
-    private final TicketReplyRepository ticketReplyRepository;
-    private final TicketAttachmentRepository ticketAttachmentRepository;
-    private final NotificationService notificationService;
+    private final DepartmentService departmentService;
+    private final CategoryService categoryService;
 
-    private static final String UPLOAD_DIR = "./uploads/";
+    /**
+     * Recupera tutti i ticket paginati.
+     *
+     * @param pageable Oggetto pageable per gestire la paginazione
+     * @return Page contenente i DTO dei ticket
+     */
+    public Page<TicketDto> getAllTickets(Pageable pageable) {
+        return ticketRepository.findAll(pageable)
+                .map(this::convertToDto);
+    }
 
+    /**
+     * Recupera un ticket specifico tramite il suo ID.
+     *
+     * @param id ID del ticket da recuperare
+     * @return DTO del ticket richiesto
+     * @throws ResourceNotFoundException se il ticket non esiste
+     */
+    public TicketDto getTicketById(Long id) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", "id", id));
+        return convertToDto(ticket);
+    }
+
+    /**
+     * Crea un nuovo ticket.
+     *
+     * @param ticketDto DTO contenente i dati del nuovo ticket
+     * @param username Nome utente del creatore del ticket
+     * @return Il ticket creato convertito in DTO
+     * @throws ResourceNotFoundException se l'utente o altre entità correlate non esistono
+     */
     @Transactional
-    public Ticket createTicket(TicketDto ticketDto) {
-        User currentUser = getCurrentUser();
-        Department department = departmentRepository.findById(ticketDto.getDepartmentId())
-                .orElseThrow(() -> new RuntimeException("Department not found"));
-
+    public TicketDto createTicket(TicketDto ticketDto, String username) {
+        // Recupera l'utente che sta creando il ticket
+        User creator = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+        
+        // Crea una nuova entità Ticket
         Ticket ticket = new Ticket();
+        
+        // Imposta i dati di base
         ticket.setTitle(ticketDto.getTitle());
         ticket.setDescription(ticketDto.getDescription());
-        ticket.setStatus(Ticket.TicketStatus.OPEN);
-        ticket.setPriority(ticketDto.getPriority() != null ? ticketDto.getPriority() : Ticket.TicketPriority.MEDIUM);
-        ticket.setCreatedBy(currentUser);
-        ticket.setDepartment(department);
-
-        // Set categories if provided
-        if (ticketDto.getCategoryIds() != null && !ticketDto.getCategoryIds().isEmpty()) {
-            Set<Category> categories = new HashSet<>();
-            for (Integer categoryId : ticketDto.getCategoryIds()) {
-                categoryRepository.findById(categoryId).ifPresent(categories::add);
-            }
-            ticket.setCategories(categories);
+        ticket.setPriority(ticketDto.getPriority());
+        ticket.setStatus(Ticket.TicketStatus.OPEN); // Nuovo ticket sempre in stato OPEN
+        ticket.setCreatedAt(LocalDateTime.now());
+        ticket.setCreatedBy(creator);
+        
+        // Imposta relazioni con altre entità
+        if (ticketDto.getDepartmentId() != null) {
+            ticket.setDepartment(departmentService.getDepartmentEntityById(ticketDto.getDepartmentId()));
         }
-
+        
+        if (ticketDto.getCategoryId() != null) {
+            ticket.setCategory(categoryService.getCategoryEntityById(ticketDto.getCategoryId()));
+        }
+        
+        if (ticketDto.getAssignedToId() != null) {
+            User assignee = userRepository.findById(ticketDto.getAssignedToId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", ticketDto.getAssignedToId()));
+            ticket.setAssignedTo(assignee);
+        }
+        
+        // Salva il ticket nel database
         Ticket savedTicket = ticketRepository.save(ticket);
+        
+        return convertToDto(savedTicket);
+    }
 
-        // Save attachments if any
-        if (ticketDto.getAttachments() != null) {
-            for (MultipartFile file : ticketDto.getAttachments()) {
-                if (!file.isEmpty()) {
-                    saveAttachment(file, savedTicket, currentUser);
-                }
+    /**
+     * Aggiorna un ticket esistente.
+     *
+     * @param id ID del ticket da aggiornare
+     * @param ticketDto DTO contenente i nuovi dati del ticket
+     * @return Il ticket aggiornato convertito in DTO
+     * @throws ResourceNotFoundException se il ticket o altre entità correlate non esistono
+     */
+    @Transactional
+    public TicketDto updateTicket(Long id, TicketDto ticketDto) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", "id", id));
+        
+        // Aggiorna i campi di base
+        ticket.setTitle(ticketDto.getTitle());
+        ticket.setDescription(ticketDto.getDescription());
+        ticket.setPriority(ticketDto.getPriority());
+        
+        // Se lo stato è cambiato, registra anche la data di risoluzione se necessario
+        if (ticketDto.getStatus() != null && ticket.getStatus() != ticketDto.getStatus()) {
+            ticket.setStatus(ticketDto.getStatus());
+            
+            // Se il ticket è stato risolto, imposta la data di risoluzione
+            if (ticketDto.getStatus() == Ticket.TicketStatus.RESOLVED) {
+                ticket.setResolvedAt(LocalDateTime.now());
+            } else {
+                ticket.setResolvedAt(null); // Rimuovi la data di risoluzione se lo stato è cambiato da RESOLVED
             }
         }
-
-        // Notify department managers or admins about the new ticket
-        notificationService.notifyNewTicket(savedTicket);
-
-        return savedTicket;
-    }
-
-    @Transactional
-    public TicketReply addReply(TicketReplyDto replyDto) {
-        User currentUser = getCurrentUser();
-        Ticket ticket = ticketRepository.findById(replyDto.getTicketId())
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-
-        TicketReply reply = new TicketReply();
-        reply.setContent(replyDto.getContent());
-        reply.setUser(currentUser);
-        reply.setTicket(ticket);
-        reply.setInternalNote(replyDto.isInternalNote());
-
-        TicketReply savedReply = ticketReplyRepository.save(reply);
-
-        // Save attachments if any
-        if (replyDto.getAttachments() != null) {
-            for (MultipartFile file : replyDto.getAttachments()) {
-                if (!file.isEmpty()) {
-                    saveAttachment(file, ticket, currentUser);
-                }
-            }
+        
+        // Aggiorna le relazioni
+        if (ticketDto.getDepartmentId() != null) {
+            ticket.setDepartment(departmentService.getDepartmentEntityById(ticketDto.getDepartmentId()));
         }
-
-        // Update ticket status if it was OPEN or WAITING_FOR_RESPONSE
-        if (ticket.getStatus() == Ticket.TicketStatus.OPEN) {
-            ticket.setStatus(Ticket.TicketStatus.IN_PROGRESS);
-            ticketRepository.save(ticket);
-        } else if (currentUser.equals(ticket.getCreatedBy()) && 
-                   ticket.getStatus() == Ticket.TicketStatus.WAITING_FOR_RESPONSE) {
-            ticket.setStatus(Ticket.TicketStatus.IN_PROGRESS);
-            ticketRepository.save(ticket);
-        }
-
-        // Notify relevant users about the new reply
-        notificationService.notifyNewReply(savedReply);
-
-        return savedReply;
-    }
-
-    @Transactional
-    public Ticket assignTicket(Long ticketId, Long assignedToId) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
         
-        User assignee = userRepository.findById(assignedToId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        ticket.setAssignedTo(assignee);
-        ticket.setStatus(Ticket.TicketStatus.ASSIGNED);
-        
-        Ticket updatedTicket = ticketRepository.save(ticket);
-        
-        // Notify the assignee
-        notificationService.notifyTicketAssigned(updatedTicket);
-        
-        return updatedTicket;
-    }
-
-    @Transactional
-    public Ticket updateTicketStatus(Long ticketId, Ticket.TicketStatus newStatus) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-        
-        ticket.setStatus(newStatus);
-        
-        // If resolved or closed, set resolvedAt timestamp
-        if (newStatus == Ticket.TicketStatus.RESOLVED || newStatus == Ticket.TicketStatus.CLOSED) {
-            ticket.setResolvedAt(LocalDateTime.now());
+        if (ticketDto.getCategoryId() != null) {
+            ticket.setCategory(categoryService.getCategoryEntityById(ticketDto.getCategoryId()));
         } else {
-            ticket.setResolvedAt(null);  // Clear resolution timestamp if reopened
+            ticket.setCategory(null);
         }
+        
+        // Aggiorna l'assegnatario del ticket
+        if (ticketDto.getAssignedToId() != null) {
+            User assignee = userRepository.findById(ticketDto.getAssignedToId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", ticketDto.getAssignedToId()));
+            ticket.setAssignedTo(assignee);
+        } else {
+            ticket.setAssignedTo(null);
+        }
+        
+        ticket.setUpdatedAt(LocalDateTime.now());
         
         Ticket updatedTicket = ticketRepository.save(ticket);
         
-        // Notify about status change
-        notificationService.notifyStatusChanged(updatedTicket);
+        return convertToDto(updatedTicket);
+    }
+
+    /**
+     * Recupera i ticket assegnati a un utente specifico.
+     *
+     * @param userId ID dell'utente assegnatario
+     * @return Lista di DTO dei ticket assegnati all'utente
+     */
+    public List<TicketDto> getTicketsByAssignee(Long userId) {
+        return ticketRepository.findByAssignedToId(userId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Recupera i ticket creati da un utente specifico.
+     *
+     * @param userId ID dell'utente creatore
+     * @return Lista di DTO dei ticket creati dall'utente
+     */
+    public List<TicketDto> getTicketsByCreator(Long userId) {
+        return ticketRepository.findByCreatedById(userId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Recupera i ticket filtrati per stato.
+     *
+     * @param status Stato per cui filtrare i ticket
+     * @return Lista di DTO dei ticket con lo stato specificato
+     */
+    public List<TicketDto> getTicketsByStatus(Ticket.TicketStatus status) {
+        return ticketRepository.findByStatus(status).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Converte un'entità Ticket in un DTO.
+     *
+     * @param ticket Entità Ticket da convertire
+     * @return TicketDto corrispondente
+     */
+    private TicketDto convertToDto(Ticket ticket) {
+        TicketDto dto = new TicketDto();
+        dto.setId(ticket.getId());
+        dto.setTitle(ticket.getTitle());
+        dto.setDescription(ticket.getDescription());
+        dto.setPriority(ticket.getPriority());
+        dto.setStatus(ticket.getStatus());
         
-        return updatedTicket;
-    }
-
-    @Transactional
-    public Ticket updateTicketPriority(Long ticketId, Ticket.TicketPriority newPriority) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-        
-        ticket.setPriority(newPriority);
-        return ticketRepository.save(ticket);
-    }
-
-    public Page<Ticket> getTicketsByUser(Long userId, Pageable pageable) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        return ticketRepository.findByCreatedBy(user, pageable);
-    }
-
-    public Page<Ticket> getAssignedTickets(Long userId, Pageable pageable) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        return ticketRepository.findByAssignedTo(user, pageable);
-    }
-
-    public Page<Ticket> getTicketsByDepartment(Integer departmentId, Pageable pageable) {
-        Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new RuntimeException("Department not found"));
-        
-        return ticketRepository.findByDepartment(department, pageable);
-    }
-
-    public Page<Ticket> getAllTickets(Pageable pageable) {
-        return ticketRepository.findAll(pageable);
-    }
-    
-    public Ticket getTicketById(Long id) {
-        return ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + id));
-    }
-    
-    public TicketAttachment getAttachmentById(Long id) {
-        return ticketAttachmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Attachment not found with id: " + id));
-    }
-
-    public List<TicketReply> getTicketReplies(Long ticketId) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-        
-        return ticketReplyRepository.findByTicketOrderByCreatedAtAsc(ticket);
-    }
-
-    public List<TicketAttachment> getTicketAttachments(Long ticketId) {
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-        
-        return ticketAttachmentRepository.findByTicket(ticket);
-    }
-
-    public List<Ticket> findTop10ByOrderByCreatedAtDesc() {
-        return ticketRepository.findTop10ByOrderByCreatedAtDesc();
-    }
-    
-    public long countByStatus(Ticket.TicketStatus status) {
-        return ticketRepository.countByStatus(status);
-    }
-    
-    public long countByAssignedTo(User user) {
-        return ticketRepository.countByAssignedTo(user);
-    }
-
-    private TicketAttachment saveAttachment(MultipartFile file, Ticket ticket, User user) {
-        try {
-            // Create uploads directory if it doesn't exist
-            Path uploadPath = Paths.get(UPLOAD_DIR);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Generate a unique filename
-            String originalFilename = file.getOriginalFilename();
-            String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
-            
-            // Save the file to the filesystem
-            Path filePath = uploadPath.resolve(uniqueFilename);
-            Files.copy(file.getInputStream(), filePath);
-            
-            // Create and save the attachment record
-            TicketAttachment attachment = new TicketAttachment();
-            attachment.setFileName(originalFilename);
-            attachment.setFilePath(filePath.toString());
-            attachment.setFileType(file.getContentType());
-            attachment.setFileSize(file.getSize());
-            attachment.setTicket(ticket);
-            attachment.setUploadedBy(user);
-            
-            return ticketAttachmentRepository.save(attachment);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store file", e);
+        if (ticket.getDepartment() != null) {
+            dto.setDepartmentId(ticket.getDepartment().getId());
+            dto.setDepartmentName(ticket.getDepartment().getName());
         }
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = authentication.getName();
-        return userRepository.findByUsername(currentUsername)
-                .orElseThrow(() -> new RuntimeException("Current user not found"));
+        
+        if (ticket.getCategory() != null) {
+            dto.setCategoryId(ticket.getCategory().getId());
+            dto.setCategoryName(ticket.getCategory().getName());
+        }
+        
+        if (ticket.getAssignedTo() != null) {
+            dto.setAssignedToId(ticket.getAssignedTo().getId());
+            dto.setAssignedToName(ticket.getAssignedTo().getFirstName() + " " + ticket.getAssignedTo().getLastName());
+        }
+        
+        if (ticket.getCreatedBy() != null) {
+            dto.setCreatedById(ticket.getCreatedBy().getId());
+            dto.setCreatedByName(ticket.getCreatedBy().getFirstName() + " " + ticket.getCreatedBy().getLastName());
+        }
+        
+        dto.setCreatedAt(ticket.getCreatedAt());
+        dto.setUpdatedAt(ticket.getUpdatedAt());
+        dto.setResolvedAt(ticket.getResolvedAt());
+        
+        return dto;
     }
 }

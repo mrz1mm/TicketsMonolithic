@@ -1,106 +1,198 @@
-# Ticket Management System
+# Sistema di Gestione Ticket
 
-A complete system for managing support tickets built with Spring Boot.
+![Logo del Sistema](src/main/resources/static/img/logo.png)
 
-## Setup Instructions
+Un'applicazione web monolitica per la gestione efficiente dei ticket di supporto, costruita con Spring Boot. Questo sistema permette agli utenti di creare, assegnare e tracciare i ticket di supporto attraverso un'interfaccia web intuitiva.
 
-1. Make sure PostgreSQL is installed and running on localhost:5432
-2. Create the database:
+## Caratteristiche Principali
 
-   ```bash
-   psql -U postgres -c "CREATE DATABASE ticketing;"
-   ```
+- 🎫 Creazione e gestione dei ticket
+- 👤 Gestione utenti con diversi ruoli (Admin, Support, User)
+- 🏢 Organizzazione per dipartimenti
+- 🔍 Tracciamento completo dello stato dei ticket
+- 📊 Dashboard con statistiche e visualizzazioni
+- 🔒 Sistema di autenticazione sicuro
+- 📱 Interfaccia responsive
 
-   Or let the application create it for you automatically.
+## Stack Tecnologico
 
-3. If you encounter Flyway migration issues, you can:
+- **Backend**: Java 17, Spring Boot 3.1.1
+- **Frontend**: Thymeleaf, Bootstrap 5, Font Awesome
+- **Database**: PostgreSQL 17
+- **Persistenza**: Spring Data JPA, Hibernate
+- **Sicurezza**: Spring Security
+- **Migrazione Database**: Flyway
+- **Build Tool**: Maven
+- **Utilities**: Lombok, ModelMapper
 
-   - Run the application with automatic repair:
-     ```
-     --spring.flyway.repair-on-migrate=true
-     ```
-   - Run the application with the repair profile:
-     ```
-     --spring.profiles.active=repair-flyway
-     ```
-   - Or manually reset the database:
-     ```bash
-     psql -U postgres -c "DROP DATABASE ticketing;"
-     psql -U postgres -c "CREATE DATABASE ticketing;"
-     ```
+## Prerequisiti
 
-4. Default admin credentials:
-   - Username: admin
-   - Password: admin123
+Per eseguire l'applicazione localmente, è necessario avere:
 
-## Database Migrations
+- JDK 17 o superiore
+- Maven 3.8 o superiore
+- PostgreSQL 12 o superiore
+- Git
 
-Spring Boot esegue automaticamente le migrazioni Flyway all'avvio dell'applicazione.
+## Setup e Avvio
 
-### Comandi Maven per la gestione manuale delle migrazioni
+### 1. Clonare il repository
 
-Se hai bisogno di gestire manualmente le migrazioni Flyway, puoi usare questi comandi:
+```bash
+git clone https://github.com/tuonome/ticketsMonolithic.git
+cd ticketsMonolithic
+```
 
-- Visualizzare lo stato delle migrazioni:
+### 2. Configurare il database
 
-  ```bash
-  ./mvnw flyway:info
-  ```
+Crea un database PostgreSQL:
 
-- Eseguire manualmente le migrazioni:
+```sql
+CREATE DATABASE ticketing;
+CREATE USER ticketuser WITH PASSWORD 'yourpassword';
+GRANT ALL PRIVILEGES ON DATABASE ticketing TO ticketuser;
+```
 
-  ```bash
-  ./mvnw flyway:migrate
-  ```
+### 3. Configurare l'applicazione
 
-- Riparare la metadata table di Flyway in caso di errori:
+Modifica il file `src/main/resources/application.properties` con le tue configurazioni:
 
-  ```bash
-  ./mvnw flyway:repair
-  ```
+```properties
+# Database Configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/ticketing
+spring.datasource.username=ticketuser
+spring.datasource.password=yourpassword
 
-- Cancellare il database e tutti i suoi oggetti:
-  ```bash
-  ./mvnw flyway:clean
-  ```
-  ⚠️ ATTENZIONE: questo comando elimina tutti i dati!
+# In alternativa, puoi utilizzare variabili d'ambiente
+# DB_URL, DB_USERNAME, DB_PASSWORD
+```
 
-### Opzioni di avvio dell'applicazione
+### 4. Eseguire l'applicazione
 
-Per controllare il comportamento di Flyway all'avvio:
+```bash
+# Compilare l'applicazione
+mvn clean package
 
-- Disabilitare le migrazioni automatiche:
+# Avviare l'applicazione
+mvn spring-boot:run
 
-  ```
-  --spring.flyway.enabled=false
-  ```
+# In alternativa, puoi eseguire il JAR generato
+java -jar target/ticketing-system-1.0.0.jar
+```
 
-- Riparare automaticamente in caso di problemi:
+L'applicazione sarà accessibile all'indirizzo: `http://localhost:8080`
 
-  ```
-  --spring.flyway.repair-on-migrate=true
-  ```
+Le migrazioni Flyway verranno eseguite automaticamente al primo avvio. Se desideri disattivare questo comportamento, modifica nel file `application.properties`:
 
-- Iniziare le migrazioni da una versione specifica:
-  ```
-  --spring.flyway.baseline-on-migrate=true
-  --spring.flyway.baseline-version=1
-  ```
+```properties
+spring.flyway.enabled=false
+```
 
-## Technologies
+## Credenziali di Default
 
-- Spring Boot 3.2.0
-- Spring Security
-- PostgreSQL
-- Flyway for database migrations
-- Thymeleaf templates with Bootstrap 5
-- Alpine.js for interactivity
+L'applicazione viene inizializzata con i seguenti utenti:
 
-## Features
+| Username | Password   | Ruolo   |
+| -------- | ---------- | ------- |
+| admin    | admin123   | ADMIN   |
+| support  | support123 | SUPPORT |
+| user     | user123    | USER    |
 
-- User authentication and role-based access control
-- Ticket management with categories and departments
-- Ticket assignment and status tracking
-- Attachments support
-- Real-time notifications using WebSockets
-- Responsive design with Bootstrap 5
+## Struttura del Progetto
+
+src/main/java/com/ticketing/
+├── config/ # Configurazioni Spring e sicurezza
+├── controller/ # Controller REST e MVC
+├── dto/ # Data Transfer Objects
+├── exception/ # Classi di eccezione personalizzate
+│ ├── AccessDeniedException.java
+│ ├── BadRequestException.java
+│ ├── GlobalExceptionHandler.java
+│ └── ResourceNotFoundException.java
+├── model/ # Entità JPA
+├── repository/ # Repository Spring Data
+├── service/ # Logica di business
+└── TicketingApplication.java # Entry point dell'applicazione
+
+src/main/resources/
+├── application.properties # Configurazione base dell'applicazione
+├── application-dev.properties # Configurazioni specifiche per sviluppo (non committare)
+├── application-prod.properties # Configurazioni specifiche per produzione (non committare)
+├── db/migration/ # Script di migrazione Flyway
+├── static/ # Risorse statiche (CSS, JS, immagini)
+│ ├── css/ # Fogli di stile
+│ │ ├── components/ # Stili per componenti specifici
+│ │ │ ├── tickets.css # Stili per i componenti dei ticket
+│ │ │ ├── dashboard.css # Stili per componenti della dashboard
+│ │ │ ├── forms.css # Stili per i form e input
+│ │ │ └── tables.css # Stili per le tabelle
+│ │ └── main.css # File CSS principale che importa i componenti
+│ ├── js/ # Script JavaScript
+│ │ ├── components/ # Componenti Alpine.js
+│ │ │ ├── ticket-form.js # Logica per i form dei ticket
+│ │ │ ├── ticket-filters.js # Logica per filtri dei ticket
+│ │ │ ├── dashboard-stats.js # Widget statistiche dashboard
+│ │ │ └── user-dropdown.js # Componente per menu utente
+│ │ └── app.js # File JS principale che inizializza Alpine.js
+│ └── img/ # Immagini e icone
+├── templates/ # Template Thymeleaf
+│ ├── error/ # Pagine di errore personalizzate
+│ │ ├── 400.html # Bad Request
+│ │ ├── 403.html # Access Denied
+│ │ ├── 404.html # Not Found
+│ │ └── 500.html # Internal Server Error
+
+## Configurazione dell'ambiente
+
+### Variabili d'ambiente
+
+Per la sicurezza, le credenziali e altre configurazioni sensibili devono essere impostate come variabili d'ambiente. Ecco le principali variabili che l'applicazione utilizza:
+
+```bash
+# Database
+export DB_URL=jdbc:postgresql://localhost:5432/ticketing
+export DB_USERNAME=user
+export DB_PASSWORD=password
+
+# Profilo Spring
+export SPRING_PROFILES_ACTIVE=dev  # o 'prod' per produzione
+
+# Sicurezza
+export REMEMBER_ME_KEY=chiaveSicuraRandomica
+```
+
+Per impostare un profilo specifico all'avvio:
+
+```bash
+# Avvio con profilo di sviluppo
+java -jar -Dspring.profiles.active=dev ticketing-system-1.0.0.jar
+
+# Avvio con profilo di produzione
+java -jar -Dspring.profiles.active=prod ticketing-system-1.0.0.jar
+```
+
+## Ottimizzazione delle Performance
+
+### Indici Database
+
+L'applicazione crea automaticamente indici sulle colonne più utilizzate nelle query tramite le migrazioni Flyway, includendo:
+
+- Indici sullo stato e priorità dei ticket per filtraggio rapido
+- Indici sulle foreign keys per migliorare la velocità dei JOIN
+- Indici sui campi di ricerca comuni come username ed email
+
+### Query Ottimizzate
+
+Per evitare il problema N+1 delle query, l'applicazione utilizza:
+
+- EntityGraph per caricare le entità correlate in una singola query
+- JOIN FETCH nelle query JPQL per ottimizzare il caricamento delle relazioni
+- Query specifiche per ogni caso d'uso che caricano solo i dati necessari
+
+## Autore
+
+Simone Attanasio alias mr_z1m
+
+## Licenza
+
+Questo progetto è distribuito sotto licenza MIT. Vedere il file LICENSE per maggiori informazioni.

@@ -1,115 +1,66 @@
-/* Custom CSS for Ticket Management System */
+/* File CSS principale che importa tutti i componenti */
 
-/* Body and container styles */
-body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #f8f9fa;
+/* Importa stili dei componenti */
+@import "components/tickets.css";
+@import "components/dashboard.css";
+@import "components/forms.css";
+@import "components/tables.css";
+
+/* Variabili globali */
+:root {
+  --primary-color: #0d6efd;
+  --secondary-color: #6c757d;
+  --success-color: #198754;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
 }
 
-.container {
-  flex: 1;
+/* Dark mode */
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
 }
 
-/* Card styling */
-.card {
-  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-  border: none;
-  border-radius: 0.35rem;
-  margin-bottom: 1.5rem;
+body.dark-mode .card {
+  background-color: #1e1e1e;
+  border-color: #2d2d2d;
 }
 
-.card-header {
-  padding: 0.75rem 1.25rem;
-  margin-bottom: 0;
-  background-color: #f8f9fc;
-  border-bottom: 1px solid #e3e6f0;
+body.dark-mode .navbar {
+  background-color: #1a1a1a !important;
 }
 
-/* Admin dashboard card styling */
-.border-left-primary {
-  border-left: 0.25rem solid #4e73df !important;
+/* Utility classes */
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.border-left-success {
-  border-left: 0.25rem solid #1cc88a !important;
+.clickable {
+  cursor: pointer;
 }
 
-.border-left-info {
-  border-left: 0.25rem solid #36b9cc !important;
+/* Layout */
+.main-content {
+  min-height: calc(100vh - 120px); /* Altezza pagina meno header e footer */
 }
 
-.border-left-warning {
-  border-left: 0.25rem solid #f6c23e !important;
+/* Animazioni */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
 }
 
-.border-left-danger {
-  border-left: 0.25rem solid #e74a3b !important;
-}
-
-/* Custom avatar styles */
-.avatar {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-/* Custom form styles */
-.form-control:focus {
-  border-color: #bac8f3;
-  box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
-}
-
-.btn-primary {
-  background-color: #4e73df;
-  border-color: #4e73df;
-}
-
-.btn-primary:hover {
-  background-color: #2e59d9;
-  border-color: #2653d4;
-}
-
-/* Ticket conversation styles */
-.bg-warning-subtle {
-  background-color: rgba(255, 193, 7, 0.1);
-}
-
-/* Navigation styling */
-.navbar-dark.bg-primary {
-  background-color: #4e73df !important;
-}
-
-.breadcrumb {
-  background-color: #f8f9fa;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  border-radius: 0.35rem;
-}
-
-/* Footer styling */
-footer {
-  margin-top: 2rem;
-  padding: 1rem 0;
-  background-color: #f8f9fa;
-  border-top: 1px solid #e3e6f0;
-}
-
-/* Table styling */
-.table thead th {
-  vertical-align: middle;
-  border-bottom: 2px solid #e3e6f0;
-  font-weight: 700;
-  color: #5a5c69;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .card-body {
-    padding: 1rem;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

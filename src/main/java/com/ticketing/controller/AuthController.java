@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequiredArgsConstructor
@@ -32,13 +33,18 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String registerUser(@Valid @ModelAttribute("user") UserRegistrationDto registrationDto,
-                               BindingResult result, Model model) {
-        
+    public String registerUser(
+        @Valid @ModelAttribute("registrationDto") UserRegistrationDto registrationDto,
+        BindingResult result,
+        Model model,
+        RedirectAttributes redirectAttributes
+    ) {
+        // Validazione custom per verificare che le password corrispondano
         if (!registrationDto.getPassword().equals(registrationDto.getConfirmPassword())) {
-            result.rejectValue("confirmPassword", "error.user", "Passwords do not match");
+            result.rejectValue("confirmPassword", "error.confirmPassword", "Le password non corrispondono");
         }
         
+        // Se ci sono errori, ritorna al form di registrazione
         if (result.hasErrors()) {
             model.addAttribute("departments", departmentService.getAllDepartments());
             return "auth/register";
@@ -46,8 +52,9 @@ public class AuthController {
         
         try {
             userService.registerNewUser(registrationDto);
-            return "redirect:/login?registered";
-        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("successMessage", "Registrazione completata con successo! Accedi con le tue credenziali.");
+            return "redirect:/login";
+        } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
             model.addAttribute("departments", departmentService.getAllDepartments());
             return "auth/register";

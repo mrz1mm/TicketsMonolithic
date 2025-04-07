@@ -1,54 +1,67 @@
 package com.ticketing.dto;
 
-import com.ticketing.model.Ticket;
-import jakarta.validation.constraints.NotEmpty;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ticketing.model.Ticket.TicketPriority;
+import com.ticketing.model.Ticket.TicketStatus;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.LocalDateTime;
 
+/**
+ * Data Transfer Object per i ticket.
+ * Utilizzato per trasferire dati tra il livello di presentazione e il livello di servizio,
+ * evitando l'esposizione diretta delle entità JPA.
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class TicketDto {
-
+    
     private Long id;
     
-    @NotEmpty(message = "Title is required")
-    @Size(min = 5, max = 100, message = "Title must be between 5 and 100 characters")
+    @NotBlank(message = "Il titolo è obbligatorio")
+    @Size(min = 5, max = 100, message = "Il titolo deve essere compreso tra 5 e 100 caratteri")
     private String title;
     
-    @NotEmpty(message = "Description is required")
+    @NotBlank(message = "La descrizione è obbligatoria")
+    @Size(min = 10, message = "La descrizione deve contenere almeno 10 caratteri")
     private String description;
     
-    private Ticket.TicketStatus status;
+    @NotNull(message = "La priorità è obbligatoria")
+    private TicketPriority priority;
     
-    private Ticket.TicketPriority priority;
+    private TicketStatus status;
     
-    @NotNull(message = "Department is required")
-    private Integer departmentId;
+    @NotNull(message = "Il dipartimento è obbligatorio")
+    private Long departmentId;
+    
+    private String departmentName;
+    
+    private Long categoryId;
+    
+    private String categoryName;
     
     private Long assignedToId;
     
-    private Set<Integer> categoryIds = new HashSet<>();
+    private String assignedToName;
     
-    private List<MultipartFile> attachments = new ArrayList<>();
+    private Long createdById;
     
-    // Additional fields for displaying ticket details
-    private String createdByUsername;
-    private String assignedToUsername;
-    private String departmentName;
-    private Set<String> categoryNames;
-    private LocalDateTimeDto createdAt;
-    private LocalDateTimeDto updatedAt;
-    private LocalDateTimeDto resolvedAt;
+    private String createdByName;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedAt;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime resolvedAt;
 }

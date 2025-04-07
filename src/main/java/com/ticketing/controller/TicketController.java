@@ -1,246 +1,254 @@
 package com.ticketing.controller;
 
 import com.ticketing.dto.TicketDto;
-import com.ticketing.dto.TicketReplyDto;
-import com.ticketing.model.Ticket;
-import com.ticketing.model.TicketAttachment;
-import com.ticketing.model.User;
-import com.ticketing.service.*;
+import com.ticketing.exception.ResourceNotFoundException;
+import com.ticketing.model.Ticket.TicketPriority;
+import com.ticketing.model.Ticket.TicketStatus;
+import com.ticketing.service.CategoryService;
+import com.ticketing.service.DepartmentService;
+import com.ticketing.service.TicketService;
+import com.ticketing.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.Principal;
-import java.util.stream.Collectors;
-
+/**
+ * Controller per la gestione delle operazioni sui ticket.
+ * Gestisce le richieste relative alla visualizzazione, creazione, modifica ed eliminazione dei ticket.
+ */
 @Controller
-@RequiredArgsConstructor
 @RequestMapping("/tickets")
+@RequiredArgsConstructor
 public class TicketController {
-
+    
+    private static final Logger logger = LoggerFactory.getLogger(TicketController.class);
+    private static final int PAGE_SIZE = 10;
+    
     private final TicketService ticketService;
     private final UserService userService;
     private final DepartmentService departmentService;
     private final CategoryService categoryService;
 
+    /**
+     * Visualizza l'elenco dei ticket con paginazione.
+     *
+     * @param page Numero di pagina (zero-based)
+     * @param model Model per l'aggiunta di attributi alla vista
+     * @return Nome della vista Thymeleaf
+     */
     @GetMapping
-    public String listTickets(Model model, 
-                             @RequestParam(defaultValue = "0") int page,
-                             @RequestParam(defaultValue = "10") int size,
-                             Principal principal) {
+    public String listTickets(@RequestParam(defaultValue = "0") int page, Model model) {
+        logger.debug("Richiesta di elenco ticket, pagina: {}", page);
         
-        User currentUser = userService.getUserByUsername(principal.getName());
+        // Crea un oggetto Pageable per la paginazione, ordinando per data di creazione discendente
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
         
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // Ottieni i ticket paginati dal service
+        Page<TicketDto> ticketPage = ticketService.getAllTickets(pageable);
         
-        // Different views based on user roles
-        boolean isAdmin = currentUser.getRoles().stream().anyMatch(r -> r.getName().equals("ADMIN"));
-        boolean isSupport = currentUser.getRoles().stream().anyMatch(r -> r.getName().equals("SUPPORT"));
-        
-        Page<Ticket> tickets;
-        
-        if (isAdmin) {
-            // Admins can see all tickets
-            tickets = ticketService.getAllTickets(pageRequest);
-            model.addAttribute("viewType", "all");
-        } else if (isSupport) {
-            // Support users see tickets from their department
-            tickets = ticketService.getTicketsByDepartment(currentUser.getDepartment().getId(), pageRequest);
-            model.addAttribute("viewType", "department");
-        } else {
-            // Regular users see just their tickets
-            tickets = ticketService.getTicketsByUser(currentUser.getId(), pageRequest);
-            model.addAttribute("viewType", "own");
-        }
-        
-        model.addAttribute("tickets", tickets);
+        // Aggiungi i dati necessari al model per la visualizzazione
+        model.addAttribute("ticketPage", ticketPage);
         model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", tickets.getTotalPages());
-        model.addAttribute("statuses", Ticket.TicketStatus.values());
+        model.addAttribute("totalPages", ticketPage.getTotalPages());
+        model.addAttribute("totalTickets", ticketPage.getTotalElements());
+        
+        // Aggiungi dati necessari per i filtri nella UI
+        model.addAttribute("departments", departmentService.getAllDepartments());
+        model.addAttribute("statuses", TicketStatus.values());
         
         return "tickets/list";
     }
 
+    /**
+     * Visualizza i dettagli di un ticket specifico.
+     *
+     * @param id ID del ticket da visualizzare
+     * @param model Model per l'aggiunta di attributi alla vista
+     * @return Nome della vista Thymeleaf
+     */
+    @GetMapping("/{id}")
+    public String viewTicket(@PathVariable Long id, Model model) {
+        try {
+            logger.debug("Richiesta di visualizzazione ticket con ID: {}", id);
+            TicketDto ticket = ticketService.getTicketById(id);
+            model.addAttribute("ticket", ticket);
+            return "tickets/view";
+        } catch (ResourceNotFoundException e) {
+            logger.error("Ticket non trovato con ID: {}", id, e);
+            // Gestione dell'errore tramite GlobalExceptionHandler
+            throw e;
+        }
+    }
+
+    /**
+     * Mostra il form per la creazione di un nuovo ticket.
+     *
+     * @param model Model per l'aggiunta di attributi alla vista
+     * @return Nome della vista Thymeleaf
+     */
     @GetMapping("/create")
-    public String createTicketForm(Model model) {
-        model.addAttribute("ticketDto", new TicketDto());
+    public String showCreateForm(Model model) {
+        logger.debug("Mostra form per creazione nuovo ticket");
+        
+        // Prepara un nuovo DTO vuoto per il form
+        model.addAttribute("ticket", new TicketDto());
+        
+        // Aggiunge dati di supporto per il form
         model.addAttribute("departments", departmentService.getAllDepartments());
         model.addAttribute("categories", categoryService.getAllCategories());
-        model.addAttribute("priorities", Ticket.TicketPriority.values());
+        model.addAttribute("supportUsers", userService.getSupportUsers());
+        model.addAttribute("priorities", TicketPriority.values());
         
         return "tickets/create";
     }
 
+    /**
+     * Elabora la richiesta di creazione di un nuovo ticket.
+     *
+     * @param ticketDto DTO contenente i dati del nuovo ticket
+     * @param result Risultato della validazione
+     * @param authentication Oggetto authentication per ottenere l'utente corrente
+     * @param redirectAttributes Attributi per i messaggi di redirect
+     * @param model Model per l'aggiunta di attributi alla vista in caso di errori
+     * @return Redirect alla pagina del ticket creato o ritorno al form in caso di errori
+     */
     @PostMapping("/create")
-    public String createTicket(@Valid @ModelAttribute TicketDto ticketDto, 
-                              BindingResult result, 
-                              Model model) {
+    public String createTicket(
+            @Valid @ModelAttribute("ticket") TicketDto ticketDto,
+            BindingResult result,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+        
+        logger.debug("Richiesta di creazione nuovo ticket: {}", ticketDto.getTitle());
+        
+        // Se ci sono errori di validazione, ritorna al form
         if (result.hasErrors()) {
+            logger.debug("Errori di validazione nella creazione del ticket: {}", result.getAllErrors());
+            
+            // Riaggiunge i dati di supporto al modello
             model.addAttribute("departments", departmentService.getAllDepartments());
             model.addAttribute("categories", categoryService.getAllCategories());
-            model.addAttribute("priorities", Ticket.TicketPriority.values());
+            model.addAttribute("supportUsers", userService.getSupportUsers());
+            model.addAttribute("priorities", TicketPriority.values());
+            
             return "tickets/create";
         }
         
-        Ticket ticket = ticketService.createTicket(ticketDto);
-        return "redirect:/tickets/" + ticket.getId();
-    }
-
-    @GetMapping("/{id}")
-    public String viewTicket(@PathVariable Long id, Model model) {
-        Ticket ticket = ticketService.getTicketById(id);
-        
-        User currentUser = getCurrentUser();
-        boolean canManageTicket = canUserManageTicket(ticket, currentUser);
-        
-        model.addAttribute("ticket", ticket);
-        model.addAttribute("replies", ticketService.getTicketReplies(id));
-        model.addAttribute("attachments", ticketService.getTicketAttachments(id));
-        model.addAttribute("replyDto", new TicketReplyDto());
-        model.addAttribute("statuses", Ticket.TicketStatus.values());
-        model.addAttribute("priorities", Ticket.TicketPriority.values());
-        model.addAttribute("canManageTicket", canManageTicket);
-        
-        // For assigning ticket
-        if (canManageTicket) {
+        try {
+            // Utilizza il nome utente dell'utente autenticato per creare il ticket
+            TicketDto createdTicket = ticketService.createTicket(ticketDto, authentication.getName());
+            
+            // Aggiunge messaggio di successo per la pagina di destinazione
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket creato con successo");
+            
+            // Redirect alla pagina del ticket appena creato
+            return "redirect:/tickets/" + createdTicket.getId();
+        } catch (Exception e) {
+            // Gestione degli errori durante la creazione
+            logger.error("Errore durante la creazione del ticket", e);
+            
+            model.addAttribute("errorMessage", "Si è verificato un errore: " + e.getMessage());
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("categories", categoryService.getAllCategories());
             model.addAttribute("supportUsers", userService.getSupportUsers());
+            model.addAttribute("priorities", TicketPriority.values());
+            
+            return "tickets/create";
         }
-        
-        return "tickets/view";
     }
 
-    @PostMapping("/{id}/reply")
-    public String addReply(@PathVariable Long id, 
-                          @Valid @ModelAttribute TicketReplyDto replyDto,
-                          BindingResult result,
-                          RedirectAttributes redirectAttributes) {
+    /**
+     * Mostra il form per la modifica di un ticket esistente.
+     *
+     * @param id ID del ticket da modificare
+     * @param model Model per l'aggiunta di attributi alla vista
+     * @return Nome della vista Thymeleaf
+     */
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable Long id, Model model) {
+        try {
+            logger.debug("Mostra form per modifica ticket con ID: {}", id);
+            
+            TicketDto ticket = ticketService.getTicketById(id);
+            
+            model.addAttribute("ticket", ticket);
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            model.addAttribute("supportUsers", userService.getSupportUsers());
+            model.addAttribute("statuses", TicketStatus.values());
+            model.addAttribute("priorities", TicketPriority.values());
+            
+            return "tickets/edit";
+        } catch (ResourceNotFoundException e) {
+            logger.error("Ticket non trovato con ID: {}", id, e);
+            // Gestione dell'errore tramite GlobalExceptionHandler
+            throw e;
+        }
+    }
+
+    /**
+     * Elabora la richiesta di aggiornamento di un ticket esistente.
+     *
+     * @param id ID del ticket da aggiornare
+     * @param ticketDto DTO contenente i dati aggiornati del ticket
+     * @param result Risultato della validazione
+     * @param redirectAttributes Attributi per i messaggi di redirect
+     * @param model Model per l'aggiunta di attributi alla vista in caso di errori
+     * @return Redirect alla pagina del ticket aggiornato o ritorno al form in caso di errori
+     */
+    @PostMapping("/{id}/update")
+    public String updateTicket(
+            @PathVariable Long id,
+            @Valid @ModelAttribute("ticket") TicketDto ticketDto,
+            BindingResult result,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+        
+        logger.debug("Richiesta di aggiornamento ticket con ID: {}", id);
         
         if (result.hasErrors()) {
-            redirectAttributes.addFlashAttribute("error", "Reply content is required");
+            logger.debug("Errori di validazione nell'aggiornamento del ticket: {}", result.getAllErrors());
+            
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            model.addAttribute("supportUsers", userService.getSupportUsers());
+            model.addAttribute("statuses", TicketStatus.values());
+            model.addAttribute("priorities", TicketPriority.values());
+            
+            return "tickets/edit";
+        }
+        
+        try {
+            // Aggiorna il ticket attraverso il servizio
+            ticketService.updateTicket(id, ticketDto);
+            
+            // Aggiunge messaggio di successo
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket aggiornato con successo");
+            
             return "redirect:/tickets/" + id;
-        }
-        
-        replyDto.setTicketId(id);
-        ticketService.addReply(replyDto);
-        
-        return "redirect:/tickets/" + id;
-    }
-
-    @PostMapping("/{id}/assign")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPPORT')")
-    public String assignTicket(@PathVariable Long id,
-                              @RequestParam Long assignedToId,
-                              RedirectAttributes redirectAttributes) {
-        
-        try {
-            ticketService.assignTicket(id, assignedToId);
-            redirectAttributes.addFlashAttribute("success", "Ticket assigned successfully");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to assign ticket: " + e.getMessage());
-        }
-        
-        return "redirect:/tickets/" + id;
-    }
-
-    @PostMapping("/{id}/status")
-    public String updateStatus(@PathVariable Long id,
-                              @RequestParam Ticket.TicketStatus status,
-                              RedirectAttributes redirectAttributes) {
-        
-        try {
-            Ticket ticket = ticketService.getTicketById(id);
-            User currentUser = getCurrentUser();
+            logger.error("Errore durante l'aggiornamento del ticket", e);
             
-            if (!canUserManageTicket(ticket, currentUser) && !ticket.getCreatedBy().equals(currentUser)) {
-                redirectAttributes.addFlashAttribute("error", "You don't have permission to update this ticket");
-                return "redirect:/tickets/" + id;
-            }
+            model.addAttribute("errorMessage", "Si è verificato un errore: " + e.getMessage());
+            model.addAttribute("departments", departmentService.getAllDepartments());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            model.addAttribute("supportUsers", userService.getSupportUsers());
+            model.addAttribute("statuses", TicketStatus.values());
+            model.addAttribute("priorities", TicketPriority.values());
             
-            ticketService.updateTicketStatus(id, status);
-            redirectAttributes.addFlashAttribute("success", "Ticket status updated successfully");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to update status: " + e.getMessage());
+            return "tickets/edit";
         }
-        
-        return "redirect:/tickets/" + id;
-    }
-
-    @PostMapping("/{id}/priority")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPPORT')")
-    public String updatePriority(@PathVariable Long id,
-                                @RequestParam Ticket.TicketPriority priority,
-                                RedirectAttributes redirectAttributes) {
-        
-        try {
-            ticketService.updateTicketPriority(id, priority);
-            redirectAttributes.addFlashAttribute("success", "Ticket priority updated successfully");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to update priority: " + e.getMessage());
-        }
-        
-        return "redirect:/tickets/" + id;
-    }
-
-    @GetMapping("/download/{attachmentId}")
-    public ResponseEntity<Resource> downloadAttachment(@PathVariable Long attachmentId) {
-        try {
-            TicketAttachment attachment = ticketService.getAttachmentById(attachmentId);
-            
-            Path filePath = Paths.get(attachment.getFilePath());
-            Resource resource = new UrlResource(filePath.toUri());
-            
-            if (resource.exists() || resource.isReadable()) {
-                return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, 
-                            "attachment; filename=\"" + attachment.getFileName() + "\"")
-                    .body(resource);
-            } else {
-                throw new RuntimeException("Could not read the file");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Error downloading file: " + e.getMessage());
-        }
-    }
-
-    private User getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return userService.getUserByUsername(auth.getName());
-    }
-
-    private boolean canUserManageTicket(Ticket ticket, User user) {
-        // Admins can manage all tickets
-        boolean isAdmin = user.getRoles().stream()
-                .anyMatch(r -> r.getName().equals("ADMIN"));
-        
-        if (isAdmin) {
-            return true;
-        }
-        
-        // Support users can manage tickets in their department
-        boolean isSupport = user.getRoles().stream()
-                .anyMatch(r -> r.getName().equals("SUPPORT"));
-        
-        if (isSupport) {
-            return user.getDepartment().equals(ticket.getDepartment());
-        }
-        
-        // Assignees can manage their assigned tickets
-        return user.equals(ticket.getAssignedTo());
     }
 }

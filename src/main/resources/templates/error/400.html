@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org" class="h-100">
+  <head
+    th:replace="~{layout/default :: head(title='400 Richiesta Non Valida')}"
+  ></head>
+  <body class="d-flex flex-column h-100">
+    <div th:replace="~{layout/default :: nav}"></div>
+
+    <main class="flex-shrink-0">
+      <div class="container mt-5">
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <div class="card shadow">
+              <div class="card-body text-center p-5">
+                <h1 class="display-1 text-warning">400</h1>
+                <h2 class="mb-4">Richiesta Non Valida</h2>
+                <p class="lead mb-4" th:text="${message}">
+                  La richiesta inviata non può essere elaborata.
+                </p>
+                <div class="mt-4">
+                  <a href="/" class="btn btn-primary me-2">
+                    <i class="fas fa-home me-1"></i> Torna alla Home
+                  </a>
+                  <a href="javascript:history.back()" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Torna indietro
+                  </a>
+                </div>
+              </div>
+              <div class="card-footer bg-light text-muted text-center">
+                <small>
+                  Timestamp:
+                  <span
+                    th:text="${#temporals.format(timestamp, 'dd/MM/yyyy HH:mm:ss')}"
+                  ></span
+                  ><br />
+                  Path: <span th:text="${path}"></span>
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer
+      class="footer mt-auto"
+      th:replace="~{layout/default :: footer}"
+    ></footer>
+  </body>
+</html>

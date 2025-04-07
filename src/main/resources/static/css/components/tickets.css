@@ -1,0 +1,39 @@
+/* Stili per i componenti relativi ai ticket */
+
+.ticket-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 4px solid #ccc;
+}
+
+/* Colori per le diverse priorità */
+.ticket-card.priority-high {
+  border-left-color: #dc3545;
+}
+
+.ticket-card.priority-medium {
+  border-left-color: #fd7e14;
+}
+
+.ticket-card.priority-low {
+  border-left-color: #20c997;
+}
+
+/* Hover effect */
+.ticket-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Badge stati ticket */
+.ticket-status {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  border-radius: 10rem;
+}
+
+/* Tooltip personalizzato per i ticket */
+.ticket-tooltip {
+  max-width: 300px;
+  font-size: 0.85rem;
+}

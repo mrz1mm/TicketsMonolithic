@@ -43,140 +43,140 @@
 
               <form
                 th:action="@{/register}"
-                th:object="${user}"
                 method="post"
-                x-data="{ passwordMatch: true }"
-                @submit="passwordMatch = $refs.password.value === $refs.confirmPassword.value"
+                th:object="${registrationDto}"
               >
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label for="username" class="form-label">Username*</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="username"
-                      th:field="*{username}"
-                      required
-                    />
-                    <div
-                      class="text-danger"
-                      th:if="${#fields.hasErrors('username')}"
-                      th:errors="*{username}"
-                    >
-                      Username error
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="email" class="form-label">Email*</label>
-                    <input
-                      type="email"
-                      class="form-control"
-                      id="email"
-                      th:field="*{email}"
-                      required
-                    />
-                    <div
-                      class="text-danger"
-                      th:if="${#fields.hasErrors('email')}"
-                      th:errors="*{email}"
-                    >
-                      Email error
-                    </div>
-                  </div>
-                </div>
-
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label for="firstName" class="form-label">First Name</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="firstName"
-                      th:field="*{firstName}"
-                    />
-                  </div>
-                  <div class="col-md-6">
-                    <label for="lastName" class="form-label">Last Name</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="lastName"
-                      th:field="*{lastName}"
-                    />
+                <div class="mb-3">
+                  <label for="username" class="form-label">Nome utente*</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="username"
+                    th:field="*{username}"
+                    th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''"
+                  />
+                  <div
+                    class="invalid-feedback"
+                    th:if="${#fields.hasErrors('username')}"
+                    th:errors="*{username}"
+                  >
+                    Errore nel nome utente
                   </div>
                 </div>
 
                 <div class="mb-3">
-                  <label for="department" class="form-label">Department</label>
+                  <label for="email" class="form-label">Email*</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    th:field="*{email}"
+                    th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                  />
+                  <div
+                    class="invalid-feedback"
+                    th:if="${#fields.hasErrors('email')}"
+                    th:errors="*{email}"
+                  >
+                    Errore nell'email
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="firstName" class="form-label">Nome*</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="firstName"
+                    th:field="*{firstName}"
+                    th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid' : ''"
+                  />
+                  <div
+                    class="invalid-feedback"
+                    th:if="${#fields.hasErrors('firstName')}"
+                    th:errors="*{firstName}"
+                  >
+                    Il nome è obbligatorio
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="lastName" class="form-label">Cognome*</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="lastName"
+                    th:field="*{lastName}"
+                    th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid' : ''"
+                  />
+                  <div
+                    class="invalid-feedback"
+                    th:if="${#fields.hasErrors('lastName')}"
+                    th:errors="*{lastName}"
+                  >
+                    Il cognome è obbligatorio
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="password" class="form-label">Password*</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    th:field="*{password}"
+                    th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                  />
+                  <div
+                    class="invalid-feedback"
+                    th:if="${#fields.hasErrors('password')}"
+                    th:errors="*{password}"
+                  >
+                    Errore nella password
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="confirmPassword" class="form-label"
+                    >Conferma Password*</label
+                  >
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="confirmPassword"
+                    th:field="*{confirmPassword}"
+                    th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid' : ''"
+                  />
+                  <div
+                    class="invalid-feedback"
+                    th:if="${#fields.hasErrors('confirmPassword')}"
+                    th:errors="*{confirmPassword}"
+                  >
+                    Le password devono corrispondere
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="departmentId" class="form-label"
+                    >Dipartimento</label
+                  >
                   <select
                     class="form-select"
-                    id="department"
+                    id="departmentId"
                     th:field="*{departmentId}"
                   >
-                    <option value="">-- Select Department --</option>
+                    <option value="">-- Seleziona un dipartimento --</option>
                     <option
                       th:each="dept : ${departments}"
                       th:value="${dept.id}"
                       th:text="${dept.name}"
-                    >
-                      Department Name
-                    </option>
+                    ></option>
                   </select>
                 </div>
 
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label for="password" class="form-label">Password*</label>
-                    <input
-                      type="password"
-                      class="form-control"
-                      id="password"
-                      th:field="*{password}"
-                      required
-                      x-ref="password"
-                      @input="passwordMatch = $refs.password.value === $refs.confirmPassword.value"
-                    />
-                    <div
-                      class="text-danger"
-                      th:if="${#fields.hasErrors('password')}"
-                      th:errors="*{password}"
-                    >
-                      Password error
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <label for="confirmPassword" class="form-label"
-                      >Confirm Password*</label
-                    >
-                    <input
-                      type="password"
-                      class="form-control"
-                      id="confirmPassword"
-                      th:field="*{confirmPassword}"
-                      required
-                      x-ref="confirmPassword"
-                      @input="passwordMatch = $refs.password.value === $refs.confirmPassword.value"
-                    />
-                    <div
-                      class="text-danger"
-                      th:if="${#fields.hasErrors('confirmPassword')}"
-                      th:errors="*{confirmPassword}"
-                    >
-                      Confirm password error
-                    </div>
-                    <div class="text-danger" x-show="!passwordMatch">
-                      Passwords do not match
-                    </div>
-                  </div>
-                </div>
-
-                <div class="d-grid mt-4">
-                  <button
-                    type="submit"
-                    class="btn btn-primary"
-                    x-bind:disabled="!passwordMatch"
-                  >
-                    Create Account
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    Registrati
                   </button>
                 </div>
               </form>

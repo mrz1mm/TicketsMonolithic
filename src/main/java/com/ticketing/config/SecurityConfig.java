@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
 @EnableWebSecurity
@@ -42,7 +43,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            // Abilita la protezione CSRF (è importante per un'applicazione web con form)
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**")) // Ignora per le API se necessario
             .authorizeHttpRequests(authorize -> 
                 authorize
                     .requestMatchers("/", "/welcome").permitAll()
@@ -71,6 +73,22 @@ public class SecurityConfig {
                     .key(rememberMeKey)
                     .tokenValiditySeconds(rememberMeValiditySeconds)
                     .userDetailsService(userDetailsService)
+            )
+            // Aggiungi header di sicurezza comuni
+            .headers(headers -> 
+                headers
+                    .contentSecurityPolicy(csp -> 
+                        csp.policyDirectives("default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data:;")
+                    )
+                    .frameOptions(frame -> frame.sameOrigin())
+                    .xssProtection(xss -> xss.enable())
+                    .contentTypeOptions(contentType -> contentType.disable()) // Enable Content-Type Options
+                    .referrerPolicy(referrer -> 
+                        referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                    )
+                    .permissionsPolicy(permissions -> 
+                        permissions.policy("camera=(), microphone=(), geolocation=()")
+                    )
             );
         
         return http.build();

@@ -20,129 +20,143 @@
         </div>
 
         <div class="card-body">
+          <!-- Usa il componente Alpine.js direttamente nel form -->
           <form
             th:action="@{/tickets/create}"
-            th:object="${ticketDto}"
             method="post"
-            enctype="multipart/form-data"
+            th:object="${ticket}"
+            x-data="ticketForm()"
+            @submit.prevent="submitForm() && $el.submit()"
           >
             <div class="mb-3">
-              <label for="title" class="form-label">Title*</label>
+              <label for="title" class="form-label">Titolo*</label>
               <input
                 type="text"
                 class="form-control"
                 id="title"
                 th:field="*{title}"
-                required
+                x-model="formData.title"
+                @input="updateField('title')"
+                :class="{'is-invalid': errors.title || $errors?.title}"
               />
               <div
-                class="text-danger"
+                class="invalid-feedback"
+                x-text="errors.title"
+                x-show="errors.title"
+              ></div>
+              <div
+                class="invalid-feedback"
                 th:if="${#fields.hasErrors('title')}"
                 th:errors="*{title}"
               ></div>
             </div>
 
             <div class="mb-3">
-              <label for="description" class="form-label">Description*</label>
+              <label for="description" class="form-label">Descrizione*</label>
               <textarea
                 class="form-control"
                 id="description"
                 rows="5"
                 th:field="*{description}"
-                required
+                th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
               ></textarea>
               <div
-                class="text-danger"
+                class="invalid-feedback"
                 th:if="${#fields.hasErrors('description')}"
                 th:errors="*{description}"
-              ></div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="departmentId" class="form-label">Department*</label>
-                <select
-                  class="form-select"
-                  id="departmentId"
-                  th:field="*{departmentId}"
-                  required
-                >
-                  <option value="">-- Select Department --</option>
-                  <option
-                    th:each="dept : ${departments}"
-                    th:value="${dept.id}"
-                    th:text="${dept.name}"
-                  >
-                    Department Name
-                  </option>
-                </select>
-                <div
-                  class="text-danger"
-                  th:if="${#fields.hasErrors('departmentId')}"
-                  th:errors="*{departmentId}"
-                ></div>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="priority" class="form-label">Priority</label>
-                <select
-                  class="form-select"
-                  id="priority"
-                  th:field="*{priority}"
-                >
-                  <option
-                    th:each="priorityOpt : ${priorities}"
-                    th:value="${priorityOpt}"
-                    th:text="${priorityOpt}"
-                  >
-                    Priority
-                  </option>
-                </select>
+              >
+                Errore nella descrizione
               </div>
             </div>
 
             <div class="mb-3">
-              <label class="form-label">Categories</label>
-              <div class="row">
-                <div class="col-md-4 mb-2" th:each="category : ${categories}">
-                  <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      th:field="*{categoryIds}"
-                      th:value="${category.id}"
-                      th:id="${'category' + category.id}"
-                    />
-                    <label
-                      class="form-check-label"
-                      th:for="${'category' + category.id}"
-                      th:text="${category.name}"
-                    >
-                      Category Name
-                    </label>
-                  </div>
-                </div>
+              <label for="priority" class="form-label">Priorità*</label>
+              <select
+                class="form-select"
+                id="priority"
+                th:field="*{priority}"
+                th:classappend="${#fields.hasErrors('priority')} ? 'is-invalid' : ''"
+              >
+                <option value="">-- Seleziona priorità --</option>
+                <option
+                  th:each="p : ${priorities}"
+                  th:value="${p}"
+                  th:text="${p}"
+                ></option>
+              </select>
+              <div
+                class="invalid-feedback"
+                th:if="${#fields.hasErrors('priority')}"
+                th:errors="*{priority}"
+              >
+                La priorità è obbligatoria
               </div>
             </div>
 
-            <div class="mb-4">
-              <label for="attachments" class="form-label">Attachments</label>
-              <input
-                class="form-control"
-                type="file"
-                id="attachments"
-                name="attachments"
-                multiple
-              />
-              <div class="form-text">
-                You can upload multiple files (max 10MB per file)
+            <div class="mb-3">
+              <label for="departmentId" class="form-label">Dipartimento*</label>
+              <select
+                class="form-select"
+                id="departmentId"
+                th:field="*{departmentId}"
+                th:classappend="${#fields.hasErrors('departmentId')} ? 'is-invalid' : ''"
+              >
+                <option value="">-- Seleziona dipartimento --</option>
+                <option
+                  th:each="dept : ${departments}"
+                  th:value="${dept.id}"
+                  th:text="${dept.name}"
+                ></option>
+              </select>
+              <div
+                class="invalid-feedback"
+                th:if="${#fields.hasErrors('departmentId')}"
+                th:errors="*{departmentId}"
+              >
+                Il dipartimento è obbligatorio
               </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="categoryId" class="form-label">Categoria</label>
+              <select
+                class="form-select"
+                id="categoryId"
+                th:field="*{categoryId}"
+              >
+                <option value="">-- Seleziona categoria --</option>
+                <option
+                  th:each="cat : ${categories}"
+                  th:value="${cat.id}"
+                  th:text="${cat.name}"
+                ></option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="assignedToId" class="form-label">Assegna a</label>
+              <select
+                class="form-select"
+                id="assignedToId"
+                th:field="*{assignedToId}"
+              >
+                <option value="">-- Non assegnato --</option>
+                <option
+                  th:each="user : ${supportUsers}"
+                  th:value="${user.id}"
+                  th:text="${user.firstName + ' ' + user.lastName}"
+                ></option>
+              </select>
             </div>
 
             <div class="d-flex justify-content-between">
-              <a th:href="@{/tickets}" class="btn btn-secondary">Cancel</a>
-              <button type="submit" class="btn btn-primary">
-                Create Ticket
+              <a th:href="@{/tickets}" class="btn btn-secondary">Annulla</a>
+              <button type="submit" class="btn btn-primary" :disabled="loading">
+                <span
+                  class="spinner-border spinner-border-sm"
+                  x-show="loading"
+                ></span>
+                Crea Ticket
               </button>
             </div>
           </form>
